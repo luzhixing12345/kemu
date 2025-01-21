@@ -70,7 +70,7 @@ static void virtio_console__inject_interrupt_callback(struct kvm *kvm, void *par
 }
 
 void virtio_console__inject_interrupt(struct kvm *kvm) {
-    if (kvm->cfg.active_console != CONSOLE_VIRTIO)
+    if (kvm->cfg.device.active_console != CONSOLE_VIRTIO)
         return;
 
     mutex_lock(&g_cdev.mutex);
@@ -208,7 +208,7 @@ static struct virtio_ops con_dev_virtio_ops = {
 int virtio_console__init(struct kvm *kvm) {
     int r;
 
-    if (kvm->cfg.active_console != CONSOLE_VIRTIO)
+    if (kvm->cfg.device.active_console != CONSOLE_VIRTIO)
         return 0;
 
     r = virtio_init(kvm,

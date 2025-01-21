@@ -136,7 +136,7 @@ void kvm__arch_init(struct kvm *kvm) {
     struct kvm_pit_config pit_config = {
         .flags = 0,
     };
-    u64 ram_size = kvm->cfg.ram_size;
+    u64 ram_size = kvm->cfg.memory.mem_size;
     int ret;
 
     ret = ioctl(kvm->vm_fd, KVM_SET_TSS_ADDR, 0xfffbd000);
@@ -215,7 +215,7 @@ static bool load_flat_binary(struct kvm *kvm, int fd_kernel) {
 
     p = guest_real_to_host(kvm, BOOT_LOADER_SELECTOR, BOOT_LOADER_IP);
 
-    if (read_file(fd_kernel, p, kvm->cfg.ram_size) < 0)
+    if (read_file(fd_kernel, p, kvm->cfg.memory.mem_size) < 0)
         die_perror("read");
 
     kvm->arch.boot_selector = BOOT_LOADER_SELECTOR;
@@ -261,7 +261,7 @@ static bool load_bzimage(struct kvm *kvm, int fd_kernel, int fd_initrd, const ch
 
     /* read actual kernel image (vmlinux.bin) to BZ_KERNEL_START */
     p = guest_flat_to_host(kvm, BZ_KERNEL_START);
-    file_size = read_file(fd_kernel, p, kvm->cfg.ram_size - BZ_KERNEL_START);
+    file_size = read_file(fd_kernel, p, kvm->cfg.memory.mem_size - BZ_KERNEL_START);
     if (file_size < 0)
         die_perror("kernel read");
 

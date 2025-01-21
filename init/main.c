@@ -6,7 +6,6 @@
 #include <simple-clib/xargparse.h>
 #include <stdio.h>
 
-#include "kemu.h"
 #include "kvm/kvm-config.h"
 #include "kvm/mutex.h"
 #include "memory.h"
@@ -18,60 +17,65 @@
 
 __thread struct kvm_cpu *current_kvm_cpu;
 int loglevel = LOGLEVEL_INFO;
-struct kemu kemu;
+struct kvm kvm;
 
-void kemu_validate_cfg(struct kemu_config *config) {
+void kemu_validate_cfg(struct kvm_config *config) {
 }
 
-int kemu_run_init(struct kemu_config *config) {
-    struct kvm *kvm = kvm_new();
-    if (IS_ERR(kvm)) {
-        ERR("kvm_new failed\n");
-        return -1;
-    }
-    kvm->cfg.ram_addr = kvm__arch_default_ram_address();
+int kemu_run_init(struct kvm_config *config) {
+    config->memory.mem_addr = kvm__arch_default_ram_address();
 
-    if (!config->cpu_num) {
-        kvm->cfg.nrcpus = DEFAULT_NRCPUS;
+    if (!config->cpu.nrcpus) {
+        config->cpu.nrcpus = DEFAULT_NRCPUS;
     } else {
-        unsigned int nr_online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+        int nr_online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
         // KVM vCPU number can be greater than the number of online cpus
         // Virtual CPUs do not have to be mapped to physical CPU cores one by one;
         // KVM utilizes the host's CPU time slices to schedule virtual CPUs.
         // see Overcommitment
-        if (config->cpu_num > nr_online_cpus) {
-            WARNING("cpu number %u is greater than the number of online cpus %u\n", config->cpu_num, nr_online_cpus);
+        if (config->cpu.nrcpus > nr_online_cpus) {
+            WARNING("cpu number %u is greater than the number of online cpus %u\n", config->cpu.nrcpus, nr_online_cpus);
         }
-        kvm->cfg.nrcpus = config->cpu_num;
     }
 
-    if (!config->ram_size_str) {
-        kvm->cfg.ram_size = get_ram_size(kvm->cfg.nrcpus);
+    if (!config->memory.mem_size_str) {
+        config->memory.mem_size = get_ram_size(config->cpu.nrcpus);
     } else {
-        kvm->cfg.ram_size = calculate_ram_size(config->ram_size_str);
-        if (!kvm->cfg.ram_size) {
-            goto init_fail;
+        config->memory.mem_size = calculate_ram_size(config->memory.mem_size_str);
+        if (!config->memory.mem_size) {
+            return -1;
         }
     }
 
-    kvm->cfg.dev = DEFAULT_KVM_DEV;
-    kvm->cfg.console = DEFAULT_CONSOLE;
-    
-    if (!strncmp(kvm->cfg.console, "virtio", 6))
-        kvm->cfg.active_console = CONSOLE_VIRTIO;
-    else if (!strncmp(kvm->cfg.console, "serial", 6))
-        kvm->cfg.active_console = CONSOLE_8250;
-    else if (!strncmp(kvm->cfg.console, "hv", 2))
-        kvm->cfg.active_console = CONSOLE_HV;
-    else
+    config->device.kvm_dev = DEFAULT_KVM_DEV;
+    config->device.console = DEFAULT_CONSOLE;
+    if (!strncmp(config->device.console, "virtio", 6)) {
+        config->device.active_console = CONSOLE_VIRTIO;
+    } else if (!strncmp(config->device.console, "serial", 6)) {
+        config->device.active_console = CONSOLE_8250;
+    } else if (!strncmp(config->device.console, "hv", 2)) {
+        config->device.active_console = CONSOLE_HV;
+    } else {
         WARNING("No console!");
+    }
 
-    
+    if (!config->network.host_ip) {
+        config->network.host_ip = DEFAULT_HOST_ADDR;
+    }
+    if (!config->network.guest_ip) {
+        config->network.guest_ip = DEFAULT_GUEST_ADDR;
+    }
+    if (!config->network.host_mac) {
+        config->network.host_mac = DEFAULT_HOST_MAC;
+    }
+    if (!config->network.guest_mac) {
+        config->network.guest_mac = DEFAULT_GUEST_MAC;
+    }
+    if (!config->network.guest_name) {
+        config->network.guest_name = DEFAULT_GUEST_NAME;
+    }
     // init_list_init();
-
-init_fail:
-    free(kvm);
-    return -1;
+    return 0;
 }
 
 int kemu_run_work() {
@@ -79,11 +83,10 @@ int kemu_run_work() {
 }
 
 void kemu_run_exit() {
-    free(kemu.kvm);
     // init_list_exit();
 }
 
-int kemu_run(struct kemu_config *config) {
+int kemu_run(struct kvm_config *config) {
     int ret = -EFAULT;
 
     kemu_run_init(config);
@@ -95,30 +98,29 @@ int kemu_run(struct kemu_config *config) {
 }
 
 int main(int argc, const char **argv) {
-    struct kemu_config config;
-    memset(&config, 0, sizeof(struct kemu_config));
+    memset(&kvm, 0, sizeof(struct kvm));
     argparse_option options[] = {
         // basic system boot options
-        XBOX_ARG_STR(&config.name, NULL, "--name", "guest vm name", " <name>", "name"),
-        XBOX_ARG_STR(&config.kernel_path, NULL, "--kernel", "kernel binary path", " <bzImage>", "kernel"),
-        XBOX_ARG_STR(&config.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", "kernel-cmdline"),
-        XBOX_ARG_STR(&config.disk_path, NULL, "--disk", "disk path", " <disk>", "disk"),
-        XBOX_ARG_STR(&config.ram_size_str, "-m", NULL, "memory size", " <memory-size>", "memory"),
-        XBOX_ARG_INT(&config.cpu_num, NULL, "--smp", "cpu number", " <cpus>", "cpu"),
-        XBOX_ARG_STRS(&config.devices, NULL, "--device", "device" STORAGE_OPTION, " <device>", "device"),
+        XBOX_ARG_STR(&kvm.cfg.system.name, NULL, "--name", "guest vm name", " <name>", "name"),
+        XBOX_ARG_STR(&kvm.cfg.kernel.kernel_path, NULL, "--kernel", "kernel binary path", " <bzImage>", "kernel"),
+        XBOX_ARG_STR(
+            &kvm.cfg.kernel.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", "kernel-cmdline"),
+        XBOX_ARG_STR(&kvm.cfg.drive.disk_path, NULL, "--disk", "disk path", " <disk>", "disk"),
+        XBOX_ARG_STR(&kvm.cfg.memory.mem_size_str, "-m", NULL, "memory size", " <memory-size>", "memory"),
+        XBOX_ARG_INT(&kvm.cfg.cpu.nrcpus, NULL, "--smp", "cpu number", " <cpus>", "cpu"),
+        XBOX_ARG_STRS(&kvm.cfg.device.devices_str, NULL, "--device", "device" STORAGE_OPTION, " <device>", "device"),
         // storage options
-        XBOX_ARG_STRS(&config.drivers, NULL, "--drive", "drive", " <driver>", "driver"),
-        XBOX_ARG_STR(&config.hda, NULL, "--hda", "harddisk", " <harddisk>", NULL),
-        XBOX_ARG_STR(&config.hdb, NULL, "--hdb", "harddisk", " <harddisk>", NULL),
-        XBOX_ARG_STRS(&config.cdroms, NULL, "--cdrom", "cdrom" NETWORK_OPTION, " <cdrom>", "cdrom"),
+        XBOX_ARG_STRS(&kvm.cfg.drive.drives_str, NULL, "--drive", "drive", " <driver>", "driver"),
+        XBOX_ARG_STR(&kvm.cfg.drive.hda, NULL, "--hda", "harddisk", " <harddisk>", NULL),
+        XBOX_ARG_STR(&kvm.cfg.drive.hdb, NULL, "--hdb", "harddisk", " <harddisk>", NULL),
+        XBOX_ARG_STRS(&kvm.cfg.drive.cdrom, NULL, "--cdrom", "cdrom" NETWORK_OPTION, " <cdrom>", "cdrom"),
         // network options
-        XBOX_ARG_STRS(&config.network, NULL, "--net", "network" DEBUG_OPTION, " <network>", "network"),
+        XBOX_ARG_STRS(&kvm.cfg.network.network, NULL, "--net", "network" DEBUG_OPTION, " <network>", "network"),
         // debug options
-        XBOX_ARG_STR(&config.serial, NULL, "--serial", "serial", " <serial>", "serial"),
-        XBOX_ARG_STR(&config.log_file, "-D", NULL, "log file", " <log-file>", "log-file"),
-        XBOX_ARG_STR(&config.gdb_server, NULL, "--gdb", "gdb server", " tcp::<gdb-port>", "gdb-server"),
-        XBOX_ARG_BOOLEAN(&config.stop, "-S", NULL, "stop after boot", NULL, "stop"),
-        XBOX_ARG_BOOLEAN(&config.enable_gdb, "-s", NULL, "enable gdb server", NULL, "gdb"),
+        XBOX_ARG_STR(&kvm.cfg.debug.log_file, "-D", NULL, "log file", " <log-file>", "log-file"),
+        XBOX_ARG_STR(&kvm.cfg.debug.gdb_server, NULL, "--gdb", "gdb server", " tcp::<gdb-port>", "gdb-server"),
+        XBOX_ARG_BOOLEAN(&kvm.cfg.debug.stop, "-S", NULL, "stop after boot", NULL, "stop"),
+        XBOX_ARG_BOOLEAN(&kvm.cfg.debug.enable_gdb, "-s", NULL, "enable gdb server", NULL, "gdb"),
         XBOX_ARG_BOOLEAN(NULL, "-h", "--help", "show help information", NULL, "help"),
         XBOX_ARG_BOOLEAN(NULL, "-v", "--version", "show version", NULL, "version"),
         XBOX_ARG_END()};
@@ -141,8 +143,8 @@ int main(int argc, const char **argv) {
         XBOX_free_argparse(&parser);
         return 0;
     }
-    kemu_validate_cfg(&config);
-    kemu_run(&config);
+    kemu_validate_cfg(&kvm.cfg);
+    kemu_run(&kvm.cfg);
     XBOX_free_argparse(&parser);
     return 0;
 }

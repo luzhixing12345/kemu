@@ -13,9 +13,11 @@
 #define DEFAULT_HOST_ADDR        "192.168.33.1"
 #define DEFAULT_GUEST_ADDR       "192.168.33.15"
 #define DEFAULT_GUEST_MAC        "02:15:15:15:15:15"
+#define DEFAULT_GUEST_NAME       "guest-vm"
 #define DEFAULT_HOST_MAC         "02:01:01:01:01:01"
 #define DEFAULT_SCRIPT           "none"
 #define DEFAULT_SANDBOX_FILENAME "guest/sandbox.sh"
+#define DEFAULT_NRCPUS           1
 
 #define MIN_RAM_SIZE             SZ_64M
 
@@ -23,31 +25,60 @@ struct kvm_config {
     struct kvm_config_arch arch;
     struct disk_image_params disk_image[MAX_DISK_IMAGES];
     struct vfio_device_params *vfio_devices;
-    u64 ram_addr; /* Guest memory physical base address, in bytes */
-    u64 ram_size; /* Guest memory size, in bytes */
+    struct {
+        const char *name;
+    } system;
+    struct {
+        u64 mem_addr; /* Guest memory physical base address, in bytes */
+        u64 mem_size; /* Guest memory size, in bytes */
+        char *mem_size_str;
+    } memory;
+
+    struct {
+        const char *console;
+        int active_console;
+        const char *kvm_dev;
+        char **devices_str;
+    } device;
     u8 num_net_devices;
     u8 num_vfio_devices;
     u64 vsock_cid;
     bool virtio_rng;
     bool nodefaults;
-    int active_console;
     int debug_iodelay;
-    int nrcpus;
-    const char *kernel_cmdline;
-    const char *kernel_filename;
-    const char *vmlinux_filename;
-    const char *initrd_filename;
-    const char *firmware_filename;
+    struct {
+        const char *kernel_cmdline;
+        const char *kernel_path;
+        const char *vmlinux_filename;
+        const char *initrd_filename;
+        const char *firmware_filename;
+    } kernel;
+    struct {
+        int nrcpus;
+    } cpu;
+    struct {
+        const char *disk_path;
+        const char **drives_str;
+        const char *hda;
+        const char *hdb;
+        const char *cdrom;
+    } drive;
     const char *flash_filename;
-    const char *console;
-    const char *dev;
-    const char *network;
-    const char *host_ip;
-    const char *guest_ip;
-    const char *guest_mac;
-    const char *host_mac;
+    struct {
+        const char *network;
+        const char *host_ip;
+        const char *host_mac;
+        const char *guest_ip;
+        const char *guest_mac;
+        const char *guest_name;
+    } network;
+    struct {
+        const char *log_file;
+        const char *gdb_server;
+        bool stop;
+        bool enable_gdb;
+    } debug;
     const char *script;
-    const char *guest_name;
     const char *sandbox;
     const char *hugetlbfs_path;
     const char *custom_rootfs_name;

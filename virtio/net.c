@@ -709,7 +709,7 @@ static int set_net_param(struct kvm *kvm, struct virtio_net_params *p, const cha
             kvm->cfg.no_net = 1;
             return -1;
         } else
-            die("Unknown network mode %s, please use user, tap or none", kvm->cfg.network);
+            die("Unknown network mode %s, please use user, tap or none", kvm->cfg.network.network);
     } else if (strcmp(param, "script") == 0) {
         p->script = strdup(val);
     } else if (strcmp(param, "downscript") == 0) {
@@ -868,14 +868,14 @@ int virtio_net__init(struct kvm *kvm) {
         static struct virtio_net_params net_params;
 
         net_params = (struct virtio_net_params){
-            .guest_ip = kvm->cfg.guest_ip,
-            .host_ip = kvm->cfg.host_ip,
+            .guest_ip = kvm->cfg.network.guest_ip,
+            .host_ip = kvm->cfg.network.host_ip,
             .kvm = kvm,
             .script = kvm->cfg.script,
             .mode = NET_MODE_USER,
         };
-        str_to_mac(kvm->cfg.guest_mac, net_params.guest_mac);
-        str_to_mac(kvm->cfg.host_mac, net_params.host_mac);
+        str_to_mac(kvm->cfg.network.guest_mac, net_params.guest_mac);
+        str_to_mac(kvm->cfg.network.host_mac, net_params.host_mac);
 
         r = virtio_net__init_one(&net_params);
         if (r < 0)

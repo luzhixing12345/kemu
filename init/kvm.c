@@ -409,21 +409,21 @@ int kvm__init(struct kvm *kvm) {
         goto err;
     }
 
-    kvm->sys_fd = open(kvm->cfg.dev, O_RDWR);
+    kvm->sys_fd = open(kvm->cfg.device.kvm_dev, O_RDWR);
     if (kvm->sys_fd < 0) {
         if (errno == ENOENT)
             pr_err(
                 "'%s' not found. Please make sure your kernel has CONFIG_KVM "
                 "enabled and that the KVM modules are loaded.",
-                kvm->cfg.dev);
+                kvm->cfg.device.kvm_dev);
         else if (errno == ENODEV)
             pr_err(
                 "'%s' KVM driver not available.\n  # (If the KVM "
                 "module is loaded then 'dmesg' may offer further clues "
                 "about the failure.)",
-                kvm->cfg.dev);
+                kvm->cfg.device.kvm_dev);
         else
-            pr_err("Could not open %s: ", kvm->cfg.dev);
+            pr_err("Could not open %s: ", kvm->cfg.device.kvm_dev);
 
         ret = -errno;
         goto err_free;
@@ -454,14 +454,14 @@ int kvm__init(struct kvm *kvm) {
     INIT_LIST_HEAD(&kvm->mem_banks);
     kvm__init_ram(kvm);
 
-    if (!kvm->cfg.firmware_filename) {
-        if (!kvm__load_kernel(kvm, kvm->cfg.kernel_filename, kvm->cfg.initrd_filename, kvm->cfg.real_cmdline))
-            die("unable to load kernel %s", kvm->cfg.kernel_filename);
+    if (!kvm->cfg.kernel.firmware_filename) {
+        if (!kvm__load_kernel(kvm, kvm->cfg.kernel.kernel_path, kvm->cfg.kernel.initrd_filename, kvm->cfg.real_cmdline))
+            die("unable to load kernel %s", kvm->cfg.kernel.kernel_path);
     }
 
-    if (kvm->cfg.firmware_filename) {
-        if (!kvm__load_firmware(kvm, kvm->cfg.firmware_filename))
-            die("unable to load firmware image %s: %s", kvm->cfg.firmware_filename, strerror(errno));
+    if (kvm->cfg.kernel.firmware_filename) {
+        if (!kvm__load_firmware(kvm, kvm->cfg.kernel.firmware_filename))
+            die("unable to load firmware image %s: %s", kvm->cfg.kernel.firmware_filename, strerror(errno));
     } else {
         ret = kvm__arch_setup_firmware(kvm);
         if (ret < 0)

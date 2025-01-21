@@ -249,14 +249,14 @@ int kvm_cpu__init(struct kvm *kvm) {
     max_cpus = kvm__max_cpus(kvm);
     recommended_cpus = kvm__recommended_cpus(kvm);
 
-    if (kvm->cfg.nrcpus > max_cpus) {
+    if (kvm->cfg.cpu.nrcpus > max_cpus) {
         pr_warning("Limiting the number of CPUs to %d", max_cpus);
-        kvm->cfg.nrcpus = max_cpus;
-    } else if (kvm->cfg.nrcpus > recommended_cpus) {
+        kvm->cfg.cpu.nrcpus = max_cpus;
+    } else if (kvm->cfg.cpu.nrcpus > recommended_cpus) {
         pr_warning("The maximum recommended amount of VCPUs is %d", recommended_cpus);
     }
 
-    kvm->nrcpus = kvm->cfg.nrcpus;
+    kvm->nrcpus = kvm->cfg.cpu.nrcpus;
 
     task_eventfd = eventfd(0, 0);
     if (task_eventfd < 0) {
