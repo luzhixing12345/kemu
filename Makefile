@@ -25,7 +25,7 @@ ARCH ?= $(shell uname -m | sed -e s/i.86/i386/ -e s/ppc.*/powerpc/ \
 CROSS_COMPILE 	:=
 CC          	:= gcc
 TARGET      	:= kemu
-SRC_PATH    	:= src
+SRC_PATH    	:= init include/simple-clib virtio disk net
 SRC_EXT     	:= c
 THIRD_LIB   	:=
 INCLUDE_PATH 	:= include arch/$(ARCH)/include
@@ -95,7 +95,11 @@ LIB 		= lib$(TARGET).a
 rwildcard = $(foreach d, $(wildcard $1*), $(call rwildcard,$d/,$2) \
 						$(filter $2, $d))
 
-SRC = $(call rwildcard, $(SRC_PATH), %.$(SRC_EXT))
+ifneq ($(strip $(SRC_PATH)),)
+    SRC += $(call rwildcard, $(SRC_PATH), %.$(SRC_EXT))
+endif
+
+# SRC = $(call rwildcard, $(SRC_PATH), %.$(SRC_EXT))
 OBJS = $(SRC:$(SRC_EXT)=o)
 
 ifeq ($(ARCH),x86_64)
@@ -115,17 +119,17 @@ ifeq ($(ARCH),x86_64)
 	OTHEROBJS	+= arch/x86_64/bios/bios-rom.o
 endif
 
-SIMPLE_CLIB_SRC = $(call rwildcard, include/simple-clib, %.$(SRC_EXT))
-OBJS += $(SIMPLE_CLIB_SRC:$(SRC_EXT)=o)
+# SIMPLE_CLIB_SRC = $(call rwildcard, include/simple-clib, %.$(SRC_EXT))
+# OBJS += $(SIMPLE_CLIB_SRC:$(SRC_EXT)=o)
 
-VIRTIO_SRC = $(call rwildcard, virtio, %.$(SRC_EXT))
-OBJS += $(VIRTIO_SRC:$(SRC_EXT)=o)
+# VIRTIO_SRC = $(call rwildcard, virtio, %.$(SRC_EXT))
+# OBJS += $(VIRTIO_SRC:$(SRC_EXT)=o)
 
-DISK_SRC = $(call rwildcard, disk, %.$(SRC_EXT))
-OBJS += $(DISK_SRC:$(SRC_EXT)=o)
+# DISK_SRC = $(call rwildcard, disk, %.$(SRC_EXT))
+# OBJS += $(DISK_SRC:$(SRC_EXT)=o)
 
-NET_SRC = $(call rwildcard, net, %.$(SRC_EXT))
-OBJS += $(NET_SRC:$(SRC_EXT)=o)
+# NET_SRC = $(call rwildcard, net, %.$(SRC_EXT))
+# OBJS += $(NET_SRC:$(SRC_EXT)=o)
 
 comma = ,
 # The dependency file for the current target
@@ -141,7 +145,7 @@ ifeq ($(MAKECMDGOALS),debug)
 CFLAGS+=-g
 endif
 
-PROGRAM = $(SRC_PATH)/$(TARGET)
+PROGRAM = $(TARGET)
 
 all: $(PROGRAM)
 

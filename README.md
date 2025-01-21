@@ -1,6 +1,6 @@
 # kemu
 
-a clean, from-scratch, lightweight full system hypervisor for hosting KVM guests
+kemu is a lightweight hypervisor for hosting KVM guests
 
 ## build
 
@@ -10,17 +10,24 @@ no special dependence
 make
 ```
 
-and you will get `src/kemu`
+and you will get `kemu`
 
-## run
+## quick start
 
 most arguments are the same as qemu, except you need to change `-` to `--`, for example `-kernel`(in qemu) to `--kernel`(in kemu)
 
 if you have already build a linux kernel bzImage and initramfs, start the hypervisor by running the following cmd 
 
 ```bash
-./src/kemu --kernel <your-bzImage-path> --disk <your-diskimg-path>
+./kemu --kernel <bzImage> --disk <disk>
 ```
+
+## feature
+
+
+## doc
+
+see more info 
 
 ## reference
 

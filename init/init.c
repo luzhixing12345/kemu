@@ -46,7 +46,7 @@ int exit_list_add(struct init_item *t, int (*init)(), init_type type, const char
     t->init = init;
     t->fn_name = name;
     hlist_add_head(&t->n, &exit_lists[type]);
-    DEBUG("register exit fn: %s\n", name);
+    // DEBUG("register exit fn: %s\n", name);
     return 0;
 }
 
@@ -54,6 +54,6 @@ int init_list_add(struct init_item *t, int (*init)(), init_type type, const char
     t->init = init;
     t->fn_name = name;
     hlist_add_head(&t->n, &init_lists[type]);
-    DEBUG("register init[%d] fn: %s\n", type, name);
+    // DEBUG("register init[%d] fn: %s\n", type, name);
     return 0;
 }

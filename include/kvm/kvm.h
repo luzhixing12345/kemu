@@ -104,7 +104,7 @@ void kvm__set_dir(const char *fmt, ...);
 const char *kvm__get_dir(void);
 
 int kvm_init();
-struct kvm *kvm__new(void);
+struct kvm *kvm_new(void);
 int kvm__recommended_cpus(struct kvm *kvm);
 int kvm__max_cpus(struct kvm *kvm);
 int kvm__get_vm_type(struct kvm *kvm);

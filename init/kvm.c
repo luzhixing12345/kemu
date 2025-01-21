@@ -134,7 +134,7 @@ static int kvm__check_extensions(struct kvm *kvm) {
     return 0;
 }
 
-struct kvm *kvm__new(void) {
+struct kvm *kvm_new(void) {
     struct kvm *kvm = calloc(1, sizeof(*kvm));
     if (!kvm)
         return ERR_PTR(-ENOMEM);

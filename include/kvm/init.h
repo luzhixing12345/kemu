@@ -32,7 +32,7 @@ int exit_list_add(struct init_item *t, int (*init)(), init_type type, const char
     }
 
 #define __exit_list_add(cb, l)                                   \
-    static void __attribute__((destructor)) __init__##cb(void) { \
+    static void __attribute__((constructor)) __init__##cb(void) { \
         static char name[] = #cb;                                \
         static struct init_item t;                               \
         exit_list_add(&t, cb, l, name);                          \

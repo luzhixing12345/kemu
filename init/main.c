@@ -1,12 +1,15 @@
 #include <kvm/init.h>
 #include <kvm/kvm.h>
+#include <kvm/term.h>
 #include <linux/err.h>
 #include <simple-clib/logging.h>
 #include <simple-clib/xargparse.h>
 #include <stdio.h>
 
 #include "kemu.h"
+#include "kvm/kvm-config.h"
 #include "kvm/mutex.h"
+#include "memory.h"
 
 #define SYSTEM_OPTION  "\n\n[system options]"
 #define STORAGE_OPTION "\n\n[storage options]"
@@ -20,13 +23,55 @@ struct kemu kemu;
 void kemu_validate_cfg(struct kemu_config *config) {
 }
 
-void kemu_run_init(struct kemu_config *config) {
-    unsigned int nr_online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
-    INFO("nr_online_cpus: %d\n", nr_online_cpus);
+int kemu_run_init(struct kemu_config *config) {
+    struct kvm *kvm = kvm_new();
+    if (IS_ERR(kvm)) {
+        ERR("kvm_new failed\n");
+        return -1;
+    }
+    kvm->cfg.ram_addr = kvm__arch_default_ram_address();
 
-    // kemu_struct->cfg.ram_addr = kvm__arch_default_ram_address();
+    if (!config->cpu_num) {
+        kvm->cfg.nrcpus = DEFAULT_NRCPUS;
+    } else {
+        unsigned int nr_online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+        // KVM vCPU number can be greater than the number of online cpus
+        // Virtual CPUs do not have to be mapped to physical CPU cores one by one;
+        // KVM utilizes the host's CPU time slices to schedule virtual CPUs.
+        // see Overcommitment
+        if (config->cpu_num > nr_online_cpus) {
+            WARNING("cpu number %u is greater than the number of online cpus %u\n", config->cpu_num, nr_online_cpus);
+        }
+        kvm->cfg.nrcpus = config->cpu_num;
+    }
 
-    init_list_init();
+    if (!config->ram_size_str) {
+        kvm->cfg.ram_size = get_ram_size(kvm->cfg.nrcpus);
+    } else {
+        kvm->cfg.ram_size = calculate_ram_size(config->ram_size_str);
+        if (!kvm->cfg.ram_size) {
+            goto init_fail;
+        }
+    }
+
+    kvm->cfg.dev = DEFAULT_KVM_DEV;
+    kvm->cfg.console = DEFAULT_CONSOLE;
+    
+    if (!strncmp(kvm->cfg.console, "virtio", 6))
+        kvm->cfg.active_console = CONSOLE_VIRTIO;
+    else if (!strncmp(kvm->cfg.console, "serial", 6))
+        kvm->cfg.active_console = CONSOLE_8250;
+    else if (!strncmp(kvm->cfg.console, "hv", 2))
+        kvm->cfg.active_console = CONSOLE_HV;
+    else
+        WARNING("No console!");
+
+    
+    // init_list_init();
+
+init_fail:
+    free(kvm);
+    return -1;
 }
 
 int kemu_run_work() {
@@ -34,7 +79,8 @@ int kemu_run_work() {
 }
 
 void kemu_run_exit() {
-    init_list_exit();
+    free(kemu.kvm);
+    // init_list_exit();
 }
 
 int kemu_run(struct kemu_config *config) {
@@ -50,13 +96,14 @@ int kemu_run(struct kemu_config *config) {
 
 int main(int argc, const char **argv) {
     struct kemu_config config;
+    memset(&config, 0, sizeof(struct kemu_config));
     argparse_option options[] = {
         // basic system boot options
         XBOX_ARG_STR(&config.name, NULL, "--name", "guest vm name", " <name>", "name"),
         XBOX_ARG_STR(&config.kernel_path, NULL, "--kernel", "kernel binary path", " <bzImage>", "kernel"),
         XBOX_ARG_STR(&config.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", "kernel-cmdline"),
         XBOX_ARG_STR(&config.disk_path, NULL, "--disk", "disk path", " <disk>", "disk"),
-        XBOX_ARG_INT(&config.memory_size, "-m", NULL, "memory size", " <memory-size>", "memory"),
+        XBOX_ARG_STR(&config.ram_size_str, "-m", NULL, "memory size", " <memory-size>", "memory"),
         XBOX_ARG_INT(&config.cpu_num, NULL, "--smp", "cpu number", " <cpus>", "cpu"),
         XBOX_ARG_STRS(&config.devices, NULL, "--device", "device" STORAGE_OPTION, " <device>", "device"),
         // storage options

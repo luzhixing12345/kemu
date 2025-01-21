@@ -4,9 +4,12 @@
 #include <kvm/mutex.h>
 #include <linux/types.h>
 
+#define DEFAULT_NRCPUS 1
+
 struct kemu_config {
     u64 ram_addr;  // Guest memory physical base address, in bytes
     u64 ram_size;  // Guest memory size, in bytes
+    char *ram_size_str;
     // basic system boot options
     const char *name;
     const char *kernel_cmdline;
@@ -28,10 +31,8 @@ struct kemu_config {
     const char *hugetlbfs_path;
     const char *custom_rootfs_name;
     const char *real_cmdline;
-    int memory_size;
-    int cpu_num;
+    unsigned int cpu_num;
     char **devices;
-
     // network options
     char **network;
 
