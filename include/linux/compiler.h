@@ -2,7 +2,7 @@
 #define _PERF_LINUX_COMPILER_H_
 
 #ifndef __always_inline
-#define __always_inline	inline
+#define __always_inline inline
 #endif
 #define __user
 
@@ -10,11 +10,11 @@
 #define __attribute_const__
 #endif
 
-#define __used		__attribute__((__unused__))
-#define __packed	__attribute__((packed))
+#define __used   __attribute__((__unused__))
+#define __packed __attribute__((packed))
 #define __iomem
 #define __force
-#define __must_check	__attribute__((warn_unused_result))
+#define __must_check __attribute__((warn_unused_result))
 #define unlikely
 
 #endif

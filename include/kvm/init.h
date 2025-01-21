@@ -1,6 +1,4 @@
-#ifndef KVM__UTIL_INIT_H
-#define KVM__UTIL_INIT_H
-
+#pragma once
 #include <linux/types.h>
 
 struct init_item {
@@ -33,11 +31,11 @@ int exit_list_add(struct init_item *t, int (*init)(), init_type type, const char
         init_list_add(&t, cb, l, name);                           \
     }
 
-#define __exit_list_add(cb, l)                                    \
+#define __exit_list_add(cb, l)                                   \
     static void __attribute__((destructor)) __init__##cb(void) { \
-        static char name[] = #cb;                                 \
-        static struct init_item t;                                \
-        exit_list_add(&t, cb, l, name);                           \
+        static char name[] = #cb;                                \
+        static struct init_item t;                               \
+        exit_list_add(&t, cb, l, name);                          \
     }
 
 #define core_init(cb)       __init_list_add(cb, MODULE_CORE)
@@ -55,4 +53,3 @@ int exit_list_add(struct init_item *t, int (*init)(), init_type type, const char
 #define virtio_dev_exit(cb) __exit_list_add(cb, MODULE_VIRTIO_DEV)
 #define firmware_exit(cb)   __exit_list_add(cb, MODULE_FIRMWARE)
 #define late_exit(cb)       __exit_list_add(cb, MODULE_LATE)
-#endif

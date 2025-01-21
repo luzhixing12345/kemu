@@ -76,6 +76,7 @@ WARNING += -Wvolatile-register-var
 WARNING += -Wwrite-strings
 WARNING += -Wno-format-nonliteral
 WARNING += -Wno-pedantic -Wno-discarded-qualifiers
+WARNING += -Wno-incompatible-pointer-types-discards-qualifiers
 CFLAGS	+= $(WARNING)
 # ------------------------- #
 

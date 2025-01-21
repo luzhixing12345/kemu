@@ -46,11 +46,9 @@ void __LOG(int level, const char *func, int line, const char *format, ...) {
     if (!logfile) {
         fprintf(stdout, "[%s%-5s\x1b[0m][\x1b[90m%s:%d\x1b[0m] ", logcolor_str[level], loglevel_str[level], func, line);
         vfprintf(stdout, format, ap);
-        fprintf(stdout, "\n");
     } else {
         fprintf(logfile, "[%s][%s:%d] ", loglevel_str[level], func, line);
         vfprintf(logfile, format, ap);
-        fprintf(logfile, "\n");
     }
     fflush(logfile);
     va_end(ap);

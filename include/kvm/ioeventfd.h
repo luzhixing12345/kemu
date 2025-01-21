@@ -1,28 +1,29 @@
 #ifndef KVM__IOEVENTFD_H
 #define KVM__IOEVENTFD_H
 
-#include <linux/types.h>
 #include <linux/list.h>
+#include <linux/types.h>
 #include <sys/eventfd.h>
+
 #include "kvm/util.h"
 
 struct kvm;
 
 struct ioevent {
-	u64			io_addr;
-	u8			io_len;
-	void			(*fn)(struct kvm *kvm, void *ptr);
-	struct kvm		*fn_kvm;
-	void			*fn_ptr;
-	int			fd;
-	u64			datamatch;
-	u32			flags;
+    u64 io_addr;
+    u8 io_len;
+    void (*fn)(struct kvm *kvm, void *ptr);
+    struct kvm *fn_kvm;
+    void *fn_ptr;
+    int fd;
+    u64 datamatch;
+    u32 flags;
 
-	struct list_head	list;
+    struct list_head list;
 };
 
-#define IOEVENTFD_FLAG_PIO		(1 << 0)
-#define IOEVENTFD_FLAG_USER_POLL	(1 << 1)
+#define IOEVENTFD_FLAG_PIO       (1 << 0)
+#define IOEVENTFD_FLAG_USER_POLL (1 << 1)
 
 int ioeventfd__init(struct kvm *kvm);
 int ioeventfd__exit(struct kvm *kvm);

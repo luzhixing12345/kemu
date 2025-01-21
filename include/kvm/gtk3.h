@@ -9,19 +9,17 @@ struct framebuffer;
 int kvm_gtk_init(struct kvm *kvm);
 int kvm_gtk_exit(struct kvm *kvm);
 #else
-static inline int kvm_gtk_init(struct kvm *kvm)
-{
-	if (kvm->cfg.gtk)
-		die("GTK3 support not compiled in. (install the gtk3-devel or libgtk3.0-dev package)");
+static inline int kvm_gtk_init(struct kvm *kvm) {
+    if (kvm->cfg.gtk)
+        die("GTK3 support not compiled in. (install the gtk3-devel or libgtk3.0-dev package)");
 
-	return 0;
+    return 0;
 }
-static inline int kvm_gtk_exit(struct kvm *kvm)
-{
-	if (kvm->cfg.gtk)
-		die("GTK3 support not compiled in. (install the gtk3-devel or libgtk3.0-dev package)");
+static inline int kvm_gtk_exit(struct kvm *kvm) {
+    if (kvm->cfg.gtk)
+        die("GTK3 support not compiled in. (install the gtk3-devel or libgtk3.0-dev package)");
 
-	return 0;
+    return 0;
 }
 #endif
 

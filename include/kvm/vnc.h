@@ -9,13 +9,11 @@ struct framebuffer;
 int vnc__init(struct kvm *kvm);
 int vnc__exit(struct kvm *kvm);
 #else
-static inline int vnc__init(struct kvm *kvm)
-{
-	return 0;
+static inline int vnc__init(struct kvm *kvm) {
+    return 0;
 }
-static inline int vnc__exit(struct kvm *kvm)
-{
-	return 0;
+static inline int vnc__exit(struct kvm *kvm) {
+    return 0;
 }
 #endif
 

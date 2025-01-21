@@ -5,6 +5,6 @@
 /*
  * EFLAGS bits
  */
-#define X86_EFLAGS_CF	0x00000001 /* Carry Flag */
+#define X86_EFLAGS_CF 0x00000001 /* Carry Flag */
 
 #endif

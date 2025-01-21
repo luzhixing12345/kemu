@@ -11,29 +11,31 @@
  */
 
 struct mutex {
-	pthread_mutex_t mutex;
+    pthread_mutex_t mutex;
 };
-#define MUTEX_INITIALIZER { .mutex = PTHREAD_MUTEX_INITIALIZER }
+#define MUTEX_INITIALIZER \
+    { .mutex = PTHREAD_MUTEX_INITIALIZER }
 
 #define DEFINE_MUTEX(mtx) struct mutex mtx = MUTEX_INITIALIZER
 
-static inline void mutex_init(struct mutex *lock)
-{
-	if (pthread_mutex_init(&lock->mutex, NULL) != 0)
-		die("unexpected pthread_mutex_init() failure!");
+static inline void mutex_init(struct mutex *lock) {
+    if (pthread_mutex_init(&lock->mutex, NULL) != 0)
+        die("unexpected pthread_mutex_init() failure!");
 }
 
-static inline void mutex_lock(struct mutex *lock)
-{
-	if (pthread_mutex_lock(&lock->mutex) != 0)
-		die("unexpected pthread_mutex_lock() failure!");
-
+static inline void mutex_lock(struct mutex *lock) {
+    if (pthread_mutex_lock(&lock->mutex) != 0)
+        die("unexpected pthread_mutex_lock() failure!");
 }
 
-static inline void mutex_unlock(struct mutex *lock)
-{
-	if (pthread_mutex_unlock(&lock->mutex) != 0)
-		die("unexpected pthread_mutex_unlock() failure!");
+static inline void mutex_unlock(struct mutex *lock) {
+    if (pthread_mutex_unlock(&lock->mutex) != 0)
+        die("unexpected pthread_mutex_unlock() failure!");
+}
+
+static inline void mutex_destroy(struct mutex *lock) {
+    if (pthread_mutex_destroy(&lock->mutex) != 0)
+        die("unexpected pthread_mutex_destroy() failure!");
 }
 
 #endif /* KVM__MUTEX_H */

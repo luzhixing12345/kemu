@@ -4,7 +4,7 @@
 #include <linux/compiler.h>
 
 #ifndef __compiletime_error
-# define __compiletime_error(message)
+#define __compiletime_error(message)
 #endif
 
 #define notrace __attribute__((no_instrument_function))

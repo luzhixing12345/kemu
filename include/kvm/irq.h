@@ -1,11 +1,11 @@
 #ifndef KVM__IRQ_H
 #define KVM__IRQ_H
 
-#include <stdbool.h>
-#include <linux/types.h>
-#include <linux/rbtree.h>
-#include <linux/list.h>
 #include <linux/kvm.h>
+#include <linux/list.h>
+#include <linux/rbtree.h>
+#include <linux/types.h>
+#include <stdbool.h>
 
 #include "kvm/kvm-arch.h"
 #include "kvm/msi.h"
@@ -13,10 +13,10 @@
 struct kvm;
 
 struct msi_routing_ops {
-	int (*update_route)(struct kvm *kvm, struct kvm_irq_routing_entry *);
-	bool (*can_signal_msi)(struct kvm *kvm);
-	int (*signal_msi)(struct kvm *kvm, struct kvm_msi *msi);
-	int (*translate_gsi)(struct kvm *kvm, u32 gsi);
+    int (*update_route)(struct kvm *kvm, struct kvm_irq_routing_entry *);
+    bool (*can_signal_msi)(struct kvm *kvm);
+    int (*signal_msi)(struct kvm *kvm, struct kvm_msi *msi);
+    int (*translate_gsi)(struct kvm *kvm, u32 gsi);
 };
 
 extern struct msi_routing_ops *msi_routing_ops;
@@ -40,8 +40,7 @@ int irq__signal_msi(struct kvm *kvm, struct kvm_msi *msi);
  * The function takes two eventfd arguments, trigger_fd and resample_fd. If
  * resample_fd is <= 0, resampling is disabled and the IRQ is edge-triggered
  */
-int irq__common_add_irqfd(struct kvm *kvm, unsigned int gsi, int trigger_fd,
-			   int resample_fd);
+int irq__common_add_irqfd(struct kvm *kvm, unsigned int gsi, int trigger_fd, int resample_fd);
 void irq__common_del_irqfd(struct kvm *kvm, unsigned int gsi, int trigger_fd);
 
 #ifndef irq__add_irqfd

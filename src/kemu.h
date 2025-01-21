@@ -49,11 +49,8 @@ struct kemu_config {
     int enable_gdb;
 };
 
-struct kemu_struct {
-    int kvm_fd;  // open("/dev/kvm")
-    int vm_fd;   // ioctl(KVM_CREATE_VM)
-    struct mutex mem_lock;
-    struct kemu_config cfg;
+struct kemu {
+    struct kvm *kvm;
 };
 
 int kemu_run(struct kemu_config *config);

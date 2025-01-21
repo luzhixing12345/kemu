@@ -15,14 +15,14 @@
 #define LOG_LEVEL LOG_DEBUG
 #endif
 
-#define EMERG(...)   __LOG(LOG_EMERG, __FUNCTION__, __LINE__, ##__VA_ARGS__);
-#define ALERT(...)   __LOG(LOG_ALERT, __FUNCTION__, __LINE__, ##__VA_ARGS__);
-#define CRIT(...)    __LOG(LOG_CRIT, __FUNCTION__, __LINE__, ##__VA_ARGS__);
-#define ERR(...)     __LOG(LOG_ERR, __FUNCTION__, __LINE__, ##__VA_ARGS__);
-#define WARNING(...) __LOG(LOG_WARNING, __FUNCTION__, __LINE__, ##__VA_ARGS__);
-#define NOTICE(...)  __LOG(LOG_NOTICE, __FUNCTION__, __LINE__, ##__VA_ARGS__);
-#define INFO(...)    __LOG(LOG_INFO, __FUNCTION__, __LINE__, ##__VA_ARGS__);
-#define DEBUG(...)   __LOG(LOG_DEBUG, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define EMERG(...)        __LOG(LOG_EMERG, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define ALERT(...)        __LOG(LOG_ALERT, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define CRIT(...)         __LOG(LOG_CRIT, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define ERR(...)          __LOG(LOG_ERR, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define WARNING(...)      __LOG(LOG_WARNING, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define NOTICE(...)       __LOG(LOG_NOTICE, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define INFO(...)         __LOG(LOG_INFO, __FUNCTION__, __LINE__, ##__VA_ARGS__);
+#define DEBUG(...)        __LOG(LOG_DEBUG, __FUNCTION__, __LINE__, ##__VA_ARGS__);
 
 #define DEFAULT_LOG_FILE  NULL
 

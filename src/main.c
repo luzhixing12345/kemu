@@ -1,11 +1,12 @@
+#include <kvm/init.h>
 #include <kvm/kvm.h>
 #include <linux/err.h>
 #include <simple-clib/logging.h>
 #include <simple-clib/xargparse.h>
 #include <stdio.h>
 
-#include <kvm/init.h>
 #include "kemu.h"
+#include "kvm/mutex.h"
 
 #define SYSTEM_OPTION  "\n\n[system options]"
 #define STORAGE_OPTION "\n\n[storage options]"
@@ -14,46 +15,35 @@
 
 __thread struct kvm_cpu *current_kvm_cpu;
 int loglevel = LOGLEVEL_INFO;
+struct kemu kemu;
 
 void kemu_validate_cfg(struct kemu_config *config) {
 }
 
-void kemu_init_subsystem(void) {
-    init_list_init();
-}
-
-struct kemu_struct *kemu_run_init(struct kemu_config *config) {
-    struct kemu_struct *kemu_struct = calloc(1, sizeof(struct kemu_struct));
-    mutex_init(&kemu_struct->mem_lock);
-    kemu_struct->kvm_fd = -1;
-    kemu_struct->vm_fd = -1;
+void kemu_run_init(struct kemu_config *config) {
     unsigned int nr_online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
-    INFO("nr_online_cpus: %d", nr_online_cpus);
+    INFO("nr_online_cpus: %d\n", nr_online_cpus);
 
     // kemu_struct->cfg.ram_addr = kvm__arch_default_ram_address();
 
-    kemu_init_subsystem();
-    return kemu_struct;
+    init_list_init();
 }
 
-int kemu_run_work(struct kemu_struct *kvm) {
+int kemu_run_work() {
     return 0;
 }
 
-void kemu_run_exit(struct kemu_struct *kvm, int ret) {
-    free(kvm);
+void kemu_run_exit() {
+    init_list_exit();
 }
 
 int kemu_run(struct kemu_config *config) {
     int ret = -EFAULT;
-    struct kemu_struct *kemu_struct;
 
-    kemu_struct = kemu_run_init(config);
-    if (IS_ERR(kemu_struct))
-        return PTR_ERR(kemu_struct);
+    kemu_run_init(config);
 
-    ret = kemu_run_work(kemu_struct);
-    kemu_run_exit(kemu_struct, ret);
+    ret = kemu_run_work();
+    kemu_run_exit();
 
     return ret;
 }

@@ -5,7 +5,7 @@
 #define NULL ((void *)0)
 
 #undef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#define offsetof(TYPE, MEMBER) ((size_t) & ((TYPE *)0)->MEMBER)
 
 /**
  * __DECLARE_FLEX_ARRAY() - Declare a flexible array usable in a union
@@ -17,10 +17,11 @@
  * struct, it needs to be wrapped in an anonymous struct with at least 1
  * named member, but that member can be empty.
  */
-#define __DECLARE_FLEX_ARRAY(TYPE, NAME)	\
-	struct { \
-		struct { } __empty_ ## NAME; \
-		TYPE NAME[]; \
-	}
+#define __DECLARE_FLEX_ARRAY(TYPE, NAME) \
+    struct {                             \
+        struct {                         \
+        } __empty_##NAME;                \
+        TYPE NAME[];                     \
+    }
 
 #endif
