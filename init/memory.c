@@ -69,13 +69,13 @@ u64 calculate_ram_size(char *ram_size_str) {
     // Determine the unit and calculate the size
     switch (toupper(unit)) {
         case 'K':
-            ram_size *= KB; // K = Kilobytes
+            ram_size *= KB;  // K = Kilobytes
             break;
         case 'M':
-            ram_size *= MB; // M = Megabytes
+            ram_size *= MB;  // M = Megabytes
             break;
         case 'G':
-            ram_size *= GB; // G = Gigabytes
+            ram_size *= GB;  // G = Gigabytes
             break;
         case '\0':
             // No unit provided, assume the value is in bytes

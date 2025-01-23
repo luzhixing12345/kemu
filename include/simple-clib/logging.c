@@ -44,7 +44,13 @@ void __LOG(int level, const char *file, const char *func, int line, const char *
     pthread_mutex_lock(&lock);
     va_start(ap, format);
     if (!logfile) {
-        fprintf(stdout, "[%s%-5s\x1b[0m][\x1b[90m%s:%d(%s)\x1b[0m] ", logcolor_str[level], loglevel_str[level], file, line, func);
+        fprintf(stdout,
+                "[%s%-5s\x1b[0m][\x1b[90m%s:%d(%s)\x1b[0m] ",
+                logcolor_str[level],
+                loglevel_str[level],
+                file,
+                line,
+                func);
         vfprintf(stdout, format, ap);
     } else {
         fprintf(logfile, "[%s][%s:%d(%s)] ", loglevel_str[level], file, line, func);

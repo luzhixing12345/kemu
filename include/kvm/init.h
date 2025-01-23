@@ -1,6 +1,7 @@
 #pragma once
 #include <linux/types.h>
-#include <vm/vm.h>
+
+struct vm;
 
 struct init_item {
     struct hlist_node n;
@@ -32,11 +33,11 @@ int exit_list_add(struct init_item *t, int (*init)(struct vm *), init_type type,
         init_list_add(&t, cb, l, name);                           \
     }
 
-#define __exit_list_add(cb, l)                                   \
+#define __exit_list_add(cb, l)                                    \
     static void __attribute__((constructor)) __init__##cb(void) { \
-        static char name[] = #cb;                                \
-        static struct init_item t;                               \
-        exit_list_add(&t, cb, l, name);                          \
+        static char name[] = #cb;                                 \
+        static struct init_item t;                                \
+        exit_list_add(&t, cb, l, name);                           \
     }
 
 #define core_init(cb)       __init_list_add(cb, MODULE_CORE)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <kvm/init.h>
 #include <kvm/kvm-arch.h>
 #include <kvm/kvm-config.h>
 #include <kvm/mutex.h>

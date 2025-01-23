@@ -1,4 +1,3 @@
-#include <vm/vm.h>
 #include <kvm/init.h>
 #include <kvm/kvm.h>
 #include <kvm/term.h>
@@ -6,6 +5,7 @@
 #include <simple-clib/logging.h>
 #include <simple-clib/xargparse.h>
 #include <stdio.h>
+#include <vm/vm.h>
 
 #include "kvm/kvm-config.h"
 #include "kvm/mutex.h"
@@ -22,9 +22,7 @@ int loglevel = LOGLEVEL_INFO;
 void vm_validate_cfg(struct vm_config *config) {
 }
 
-
 int vm_run_init(struct vm *vm) {
-    
     return 0;
 }
 

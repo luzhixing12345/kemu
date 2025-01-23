@@ -141,8 +141,10 @@ static struct kvm_msrs *kvm_msrs__new(size_t nmsrs) {
 #define MSR_IA32_MISC_ENABLE_FAST_STRING_BIT 0
 #define MSR_IA32_MISC_ENABLE_FAST_STRING     (1ULL << MSR_IA32_MISC_ENABLE_FAST_STRING_BIT)
 
-#define KVM_MSR_ENTRY(_index, _data) \
-    (struct kvm_msr_entry) { .index = _index, .data = _data }
+#define KVM_MSR_ENTRY(_index, _data)   \
+    (struct kvm_msr_entry) {           \
+        .index = _index, .data = _data \
+    }
 
 static void kvm_cpu__setup_msrs(struct kvm_cpu *vcpu) {
     unsigned long ndx = 0;

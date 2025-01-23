@@ -14,6 +14,7 @@
 #include <linux/kvm.h>
 #include <linux/list.h>
 #include <signal.h>
+#include <simple-clib/logging.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -29,7 +30,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <vm/vm.h>
-#include <simple-clib/logging.h>
 
 #define DEFINE_KVM_EXIT_REASON(reason) [reason] = #reason
 
@@ -126,7 +126,7 @@ static int kvm_check_extensions(struct kvm *kvm) {
         if (!kvm_req_ext[i].name)
             break;
         if (!kvm_supports_extension(kvm, kvm_req_ext[i].code)) {
-            pr_err("Unsupported KVM extension detected: %s", kvm_req_ext[i].name);
+            ERR("Unsupported KVM extension detected: %s", kvm_req_ext[i].name);
             return -i;
         }
     }
@@ -399,21 +399,19 @@ int kvm_init(struct vm *vm) {
 
     if (kvm->kvm_fd < 0) {
         if (errno == ENOENT)
-            pr_err(
-                "'%s' not found. Please make sure your kernel has CONFIG_KVM "
+            ERR("'%s' not found. Please make sure your kernel has CONFIG_KVM "
                 "enabled and that the KVM modules are loaded.",
                 kvm->cfg.kvm_dev);
         else if (errno == ENODEV)
-            pr_err(
-                "'%s' KVM driver not available.\n  # (If the KVM "
+            ERR("'%s' KVM driver not available.\n  # (If the KVM "
                 "module is loaded then 'dmesg' may offer further clues "
                 "about the failure.)",
                 kvm->cfg.kvm_dev);
         else
-            pr_err("Could not open %s: ", kvm->cfg.kvm_dev);
+            ERR("Could not open %s: ", kvm->cfg.kvm_dev);
 
         ret = -errno;
-        goto err_free;
+        goto err;
     }
 
     ret = ioctl(kvm->kvm_fd, KVM_GET_API_VERSION, 0);
@@ -461,8 +459,6 @@ err_vm_fd:
     close(kvm->vm_fd);
 err_sys_fd:
     close(kvm->kvm_fd);
-err_free:
-    free(kvm);
 err:
     return ret;
 }

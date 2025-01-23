@@ -2,7 +2,6 @@
 #pragma once
 
 #include <kvm/kvm.h>
-#include <kvm/init.h>
 
 struct vm_config {
     struct kvm_config_arch arch;
@@ -20,7 +19,7 @@ struct vm_config {
     struct {
         const char *console;
         int active_console;
-        const char *kvm_dev; 
+        const char *kvm_dev;
         char **devices_str;
     } device;
     u8 num_net_devices;
