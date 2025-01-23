@@ -66,7 +66,7 @@ void kvm_cpu__setup_cpuid(struct kvm_cpu *vcpu) {
     kvm_cpuid = calloc(1, sizeof(*kvm_cpuid) + MAX_KVM_CPUID_ENTRIES * sizeof(*kvm_cpuid->entries));
 
     kvm_cpuid->nent = MAX_KVM_CPUID_ENTRIES;
-    if (ioctl(vcpu->kvm->sys_fd, KVM_GET_SUPPORTED_CPUID, kvm_cpuid) < 0)
+    if (ioctl(vcpu->kvm->kvm_fd, KVM_GET_SUPPORTED_CPUID, kvm_cpuid) < 0)
         die_perror("KVM_GET_SUPPORTED_CPUID failed");
 
     filter_cpuid(kvm_cpuid, vcpu->cpu_id);

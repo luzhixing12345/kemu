@@ -73,11 +73,10 @@ WARNING += -Wredundant-decls
 WARNING += -Wsign-compare
 WARNING += -Wundef
 WARNING += -Wvolatile-register-var
-WARNING += -Wwrite-strings
 WARNING += -Wno-format-nonliteral
 WARNING += -Wno-pedantic -Wno-discarded-qualifiers
-WARNING += -Wno-incompatible-pointer-types-discards-qualifiers
 CFLAGS	+= $(WARNING)
+
 # ------------------------- #
 
 
@@ -154,6 +153,7 @@ debug: all
 $(PROGRAM): $(OBJS) $(OBJS_DYNOPT) $(OTHEROBJS) $(GUEST_OBJS)
 	$(E) -e "  LINK    \033[1;32m" $@ "\033[0m"
 	$(Q) $(CC) $(CFLAGS) $(OBJS) $(OBJS_DYNOPT) $(OTHEROBJS) $(GUEST_OBJS) $(LDFLAGS) $(LIBS) $(LIBS_DYNOPT) $(LIBFDT_STATIC) -o $@
+	$(E) "  KEMU bin $(PROGRAM) is ready."
 
 $(OBJS):
 %.o: %.c

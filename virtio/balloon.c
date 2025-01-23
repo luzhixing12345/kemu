@@ -253,8 +253,9 @@ struct virtio_ops bln_dev_virtio_ops = {
     .get_vq_count = get_vq_count,
 };
 
-int virtio_bln__init(struct kvm *kvm) {
+int virtio_bln_init(struct vm *vm) {
     int r;
+    struct kvm *kvm = &vm->kvm;
 
     if (!kvm->cfg.balloon)
         return 0;
@@ -281,11 +282,12 @@ int virtio_bln__init(struct kvm *kvm) {
 
     return 0;
 }
-virtio_dev_init(virtio_bln__init);
+virtio_dev_init(virtio_bln_init);
 
-int virtio_bln__exit(struct kvm *kvm) {
+int virtio_bln_exit(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
     virtio_exit(kvm, &g_bdev.vdev);
 
     return 0;
 }
-virtio_dev_exit(virtio_bln__exit);
+virtio_dev_exit(virtio_bln_exit);

@@ -1,9 +1,9 @@
 #include <linux/err.h>
 #include <poll.h>
+#include <vm/vm.h>
 
 #include "kvm/disk-image.h"
 #include "kvm/iovec.h"
-#include "kvm/kvm.h"
 #include "kvm/qcow.h"
 #include "kvm/virtio-blk.h"
 
@@ -327,7 +327,8 @@ void disk_image__set_callback(struct disk_image *disk, void (*disk_req_cb)(void 
     disk->disk_req_cb = disk_req_cb;
 }
 
-int disk_image__init(struct kvm *kvm) {
+int disk_image_init(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
     if (kvm->nr_disks) {
         kvm->disks = disk_image__open_all(kvm);
         if (IS_ERR(kvm->disks))
@@ -336,9 +337,10 @@ int disk_image__init(struct kvm *kvm) {
 
     return 0;
 }
-dev_base_init(disk_image__init);
+dev_base_init(disk_image_init);
 
-int disk_image__exit(struct kvm *kvm) {
+int disk_image_exit(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
     return disk_image__close_all(kvm->disks, kvm->nr_disks);
 }
-dev_base_exit(disk_image__exit);
+dev_base_exit(disk_image_exit);

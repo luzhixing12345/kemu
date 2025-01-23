@@ -158,7 +158,7 @@ static void *uip_udp_socket_thread(void *p) {
     int nfds;
     int i;
 
-    kvm__set_thread_name("uip-udp");
+    kvm_set_thread_name("uip-udp");
 
     info = p;
     payload = info->udp_buf;

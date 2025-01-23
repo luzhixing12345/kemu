@@ -70,7 +70,7 @@ static void virtio_console__inject_interrupt_callback(struct kvm *kvm, void *par
 }
 
 void virtio_console__inject_interrupt(struct kvm *kvm) {
-    if (kvm->cfg.device.active_console != CONSOLE_VIRTIO)
+    if (kvm->cfg.active_console != CONSOLE_VIRTIO)
         return;
 
     mutex_lock(&g_cdev.mutex);
@@ -205,10 +205,11 @@ static struct virtio_ops con_dev_virtio_ops = {
     .set_size_vq = set_size_vq,
 };
 
-int virtio_console__init(struct kvm *kvm) {
+int virtio_console_init(struct vm *vm) {
     int r;
+    struct kvm *kvm = &vm->kvm;
 
-    if (kvm->cfg.device.active_console != CONSOLE_VIRTIO)
+    if (kvm->cfg.active_console != CONSOLE_VIRTIO)
         return 0;
 
     r = virtio_init(kvm,
@@ -227,11 +228,12 @@ int virtio_console__init(struct kvm *kvm) {
 
     return 0;
 }
-virtio_dev_init(virtio_console__init);
+virtio_dev_init(virtio_console_init);
 
-int virtio_console__exit(struct kvm *kvm) {
+int virtio_console_exit(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
     virtio_exit(kvm, &g_cdev.vdev);
 
     return 0;
 }
-virtio_dev_exit(virtio_console__exit);
+virtio_dev_exit(virtio_console_exit);

@@ -103,8 +103,8 @@ static bool trap_is_mmio(unsigned int flags) {
     return (flags & IOTRAP_BUS_MASK) == DEVICE_BUS_MMIO;
 }
 
-int kvm__register_iotrap(struct kvm *kvm, u64 phys_addr, u64 phys_addr_len, mmio_handler_fn mmio_fn, void *ptr,
-                         unsigned int flags) {
+int kvm_register_iotrap(struct kvm *kvm, u64 phys_addr, u64 phys_addr_len, mmio_handler_fn mmio_fn, void *ptr,
+                        unsigned int flags) {
     struct mmio_mapping *mmio;
     struct kvm_coalesced_mmio_zone zone;
     int ret;
@@ -118,7 +118,7 @@ int kvm__register_iotrap(struct kvm *kvm, u64 phys_addr, u64 phys_addr_len, mmio
         .mmio_fn = mmio_fn,
         .ptr = ptr,
         /*
-         * Start from 0 because kvm__deregister_mmio() doesn't decrement
+         * Start from 0 because kvm_deregister_mmio() doesn't decrement
          * the reference count.
          */
         .refcount = 0,
@@ -147,7 +147,7 @@ int kvm__register_iotrap(struct kvm *kvm, u64 phys_addr, u64 phys_addr_len, mmio
     return ret;
 }
 
-bool kvm__deregister_iotrap(struct kvm *kvm, u64 phys_addr, unsigned int flags) {
+bool kvm_deregister_iotrap(struct kvm *kvm, u64 phys_addr, unsigned int flags) {
     struct mmio_mapping *mmio;
     struct rb_root *tree;
 
@@ -168,8 +168,8 @@ bool kvm__deregister_iotrap(struct kvm *kvm, u64 phys_addr, unsigned int flags) 
      * emulation doesn't use any locks and as a result we can end up in a
      * situation where we have called mmio_get() to do emulation on one VCPU
      * thread (let's call it VCPU0), and several other VCPU threads have
-     * called kvm__deregister_mmio(). In this case, if we decrement refcount
-     * kvm__deregister_mmio() (either directly, or by calling mmio_put()),
+     * called kvm_deregister_mmio(). In this case, if we decrement refcount
+     * kvm_deregister_mmio() (either directly, or by calling mmio_put()),
      * refcount will reach 0 and we will free the mmio node before VCPU0 has
      * called mmio_put(). This will trigger use-after-free errors on VCPU0.
      */
@@ -182,7 +182,7 @@ bool kvm__deregister_iotrap(struct kvm *kvm, u64 phys_addr, unsigned int flags) 
     return true;
 }
 
-bool kvm__emulate_mmio(struct kvm_cpu *vcpu, u64 phys_addr, u8 *data, u32 len, u8 is_write) {
+bool kvm_emulate_mmio(struct kvm_cpu *vcpu, u64 phys_addr, u8 *data, u32 len, u8 is_write) {
     struct mmio_mapping *mmio;
 
     mmio = mmio_get(&mmio_tree, phys_addr, len);
@@ -203,7 +203,7 @@ out:
     return true;
 }
 
-bool kvm__emulate_io(struct kvm_cpu *vcpu, u16 port, void *data, int direction, int size, u32 count) {
+bool kvm_emulate_io(struct kvm_cpu *vcpu, u16 port, void *data, int direction, int size, u32 count) {
     struct mmio_mapping *mmio;
     bool is_write = direction == KVM_EXIT_IO_OUT;
 

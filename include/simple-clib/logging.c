@@ -28,7 +28,7 @@ static const char *logcolor_str[] = {
     [LOG_DEBUG] = "\x1b[1;35m",  // purple
 };
 
-void __LOG(int level, const char *func, int line, const char *format, ...) {
+void __LOG(int level, const char *file, const char *func, int line, const char *format, ...) {
     if (level > LOG_LEVEL) {
         return;
     }
@@ -44,10 +44,10 @@ void __LOG(int level, const char *func, int line, const char *format, ...) {
     pthread_mutex_lock(&lock);
     va_start(ap, format);
     if (!logfile) {
-        fprintf(stdout, "[%s%-5s\x1b[0m][\x1b[90m%s:%d\x1b[0m] ", logcolor_str[level], loglevel_str[level], func, line);
+        fprintf(stdout, "[%s%-5s\x1b[0m][\x1b[90m%s:%d(%s)\x1b[0m] ", logcolor_str[level], loglevel_str[level], file, line, func);
         vfprintf(stdout, format, ap);
     } else {
-        fprintf(logfile, "[%s][%s:%d] ", loglevel_str[level], func, line);
+        fprintf(logfile, "[%s][%s:%d(%s)] ", loglevel_str[level], file, line, func);
         vfprintf(logfile, format, ap);
     }
     fflush(logfile);

@@ -1,8 +1,13 @@
-#include "kvm/kvm.h"
-
 #include <asm/unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <kvm/kvm-cpu.h>
+#include <kvm/kvm-ipc.h>
+#include <kvm/mutex.h>
+#include <kvm/read-write.h>
+#include <kvm/strbuf.h>
+#include <kvm/term.h>
+#include <kvm/util.h>
 #include <limits.h>
 #include <linux/err.h>
 #include <linux/kernel.h>
@@ -23,13 +28,8 @@
 #include <sys/un.h>
 #include <time.h>
 #include <unistd.h>
-
-#include "kvm/kvm-cpu.h"
-#include "kvm/kvm-ipc.h"
-#include "kvm/mutex.h"
-#include "kvm/read-write.h"
-#include "kvm/strbuf.h"
-#include "kvm/util.h"
+#include <vm/vm.h>
+#include <simple-clib/logging.h>
 
 #define DEFINE_KVM_EXIT_REASON(reason) [reason] = #reason
 
@@ -71,7 +71,7 @@ static int set_dir(const char *fmt, va_list args) {
     return 0;
 }
 
-void kvm__set_dir(const char *fmt, ...) {
+void kvm_set_dir(const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
@@ -79,17 +79,17 @@ void kvm__set_dir(const char *fmt, ...) {
     va_end(args);
 }
 
-const char *kvm__get_dir(void) {
+const char *kvm_get_dir(void) {
     return kvm_dir;
 }
 
-bool kvm__supports_vm_extension(struct kvm *kvm, unsigned int extension) {
+bool kvm_supports_vm_extension(struct kvm *kvm, unsigned int extension) {
     static int supports_vm_ext_check = 0;
     int ret;
 
     switch (supports_vm_ext_check) {
         case 0:
-            ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_CHECK_EXTENSION_VM);
+            ret = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_CHECK_EXTENSION_VM);
             if (ret <= 0) {
                 supports_vm_ext_check = -1;
                 return false;
@@ -109,23 +109,23 @@ bool kvm__supports_vm_extension(struct kvm *kvm, unsigned int extension) {
     return ret;
 }
 
-bool kvm__supports_extension(struct kvm *kvm, unsigned int extension) {
+bool kvm_supports_extension(struct kvm *kvm, unsigned int extension) {
     int ret;
 
-    ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, extension);
+    ret = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, extension);
     if (ret < 0)
         return false;
 
     return ret;
 }
 
-static int kvm__check_extensions(struct kvm *kvm) {
+static int kvm_check_extensions(struct kvm *kvm) {
     int i;
 
     for (i = 0;; i++) {
         if (!kvm_req_ext[i].name)
             break;
-        if (!kvm__supports_extension(kvm, kvm_req_ext[i].code)) {
+        if (!kvm_supports_extension(kvm, kvm_req_ext[i].code)) {
             pr_err("Unsupported KVM extension detected: %s", kvm_req_ext[i].name);
             return -i;
         }
@@ -134,26 +134,11 @@ static int kvm__check_extensions(struct kvm *kvm) {
     return 0;
 }
 
-struct kvm *kvm_new(void) {
-    struct kvm *kvm = calloc(1, sizeof(*kvm));
-    if (!kvm)
-        return ERR_PTR(-ENOMEM);
-
-    mutex_init(&kvm->mem_banks_lock);
-    kvm->sys_fd = -1;
-    kvm->vm_fd = -1;
-
-#ifdef KVM_BRLOCK_DEBUG
-    kvm->brlock_sem = (pthread_rwlock_t)PTHREAD_RWLOCK_INITIALIZER;
-#endif
-
-    return kvm;
-}
-
-int kvm__exit(struct kvm *kvm) {
+int kvm_exit(struct vm *vm) {
     struct kvm_mem_bank *bank, *tmp;
+    struct kvm *kvm = &vm->kvm;
 
-    kvm__arch_delete_ram(kvm);
+    kvm_arch_delete_ram(kvm);
 
     list_for_each_entry_safe(bank, tmp, &kvm->mem_banks, list) {
         list_del(&bank->list);
@@ -163,9 +148,9 @@ int kvm__exit(struct kvm *kvm) {
     free(kvm);
     return 0;
 }
-core_exit(kvm__exit);
+core_exit(kvm_exit);
 
-int kvm__destroy_mem(struct kvm *kvm, u64 guest_phys, u64 size, void *userspace_addr) {
+int kvm_destroy_mem(struct kvm *kvm, u64 guest_phys, u64 size, void *userspace_addr) {
     struct kvm_userspace_memory_region mem;
     struct kvm_mem_bank *bank;
     int ret;
@@ -209,7 +194,7 @@ out:
     return ret;
 }
 
-int kvm__register_mem(struct kvm *kvm, u64 guest_phys, u64 size, void *userspace_addr, enum kvm_mem_type type) {
+int kvm_register_mem(struct kvm *kvm, u64 guest_phys, u64 size, void *userspace_addr, enum kvm_mem_type type) {
     struct kvm_userspace_memory_region mem;
     struct kvm_mem_bank *merged = NULL;
     struct kvm_mem_bank *bank;
@@ -355,8 +340,8 @@ u64 host_to_guest_flat(struct kvm *kvm, void *ptr) {
  * If one call to @fun returns a non-zero value, stop iterating and return the
  * value. Otherwise, return zero.
  */
-int kvm__for_each_mem_bank(struct kvm *kvm, enum kvm_mem_type type,
-                           int (*fun)(struct kvm *kvm, struct kvm_mem_bank *bank, void *data), void *data) {
+int kvm_for_each_mem_bank(struct kvm *kvm, enum kvm_mem_type type,
+                          int (*fun)(struct kvm *kvm, struct kvm_mem_bank *bank, void *data), void *data) {
     int ret;
     struct kvm_mem_bank *bank;
 
@@ -372,10 +357,10 @@ int kvm__for_each_mem_bank(struct kvm *kvm, enum kvm_mem_type type,
     return ret;
 }
 
-int kvm__recommended_cpus(struct kvm *kvm) {
+int kvm_recommended_cpus(struct kvm *kvm) {
     int ret;
 
-    ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_NR_VCPUS);
+    ret = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_NR_VCPUS);
     if (ret <= 0)
         /*
          * api.txt states that if KVM_CAP_NR_VCPUS does not exist,
@@ -386,86 +371,88 @@ int kvm__recommended_cpus(struct kvm *kvm) {
     return ret;
 }
 
-int kvm__max_cpus(struct kvm *kvm) {
+int kvm_max_cpus(struct kvm *kvm) {
     int ret;
 
-    ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_MAX_VCPUS);
+    ret = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_MAX_VCPUS);
     if (ret <= 0)
-        ret = kvm__recommended_cpus(kvm);
+        ret = kvm_recommended_cpus(kvm);
 
     return ret;
 }
 
-int __attribute__((weak)) kvm__get_vm_type(struct kvm *kvm) {
+int __attribute__((weak)) kvm_get_vm_type(struct kvm *kvm) {
     return KVM_VM_TYPE;
 }
 
-int kvm__init(struct kvm *kvm) {
+int kvm_init(struct vm *vm) {
     int ret;
+    struct kvm *kvm = &vm->kvm;
 
-    if (!kvm__arch_cpu_supports_vm()) {
-        pr_err("Your CPU does not support hardware virtualization");
+    if (!kvm_arch_cpu_supports_vm()) {
+        ERR("Your CPU does not support hardware virtualization");
         ret = -ENOSYS;
         goto err;
     }
 
-    kvm->sys_fd = open(kvm->cfg.device.kvm_dev, O_RDWR);
-    if (kvm->sys_fd < 0) {
+    kvm->kvm_fd = open(kvm->cfg.kvm_dev, O_RDWR);
+
+    if (kvm->kvm_fd < 0) {
         if (errno == ENOENT)
             pr_err(
                 "'%s' not found. Please make sure your kernel has CONFIG_KVM "
                 "enabled and that the KVM modules are loaded.",
-                kvm->cfg.device.kvm_dev);
+                kvm->cfg.kvm_dev);
         else if (errno == ENODEV)
             pr_err(
                 "'%s' KVM driver not available.\n  # (If the KVM "
                 "module is loaded then 'dmesg' may offer further clues "
                 "about the failure.)",
-                kvm->cfg.device.kvm_dev);
+                kvm->cfg.kvm_dev);
         else
-            pr_err("Could not open %s: ", kvm->cfg.device.kvm_dev);
+            pr_err("Could not open %s: ", kvm->cfg.kvm_dev);
 
         ret = -errno;
         goto err_free;
     }
 
-    ret = ioctl(kvm->sys_fd, KVM_GET_API_VERSION, 0);
+    ret = ioctl(kvm->kvm_fd, KVM_GET_API_VERSION, 0);
     if (ret != KVM_API_VERSION) {
         pr_err("KVM_API_VERSION ioctl");
         ret = -errno;
         goto err_sys_fd;
     }
 
-    kvm->vm_fd = ioctl(kvm->sys_fd, KVM_CREATE_VM, kvm__get_vm_type(kvm));
+    kvm->vm_fd = ioctl(kvm->kvm_fd, KVM_CREATE_VM, kvm_get_vm_type(kvm));
     if (kvm->vm_fd < 0) {
         pr_err("KVM_CREATE_VM ioctl");
         ret = kvm->vm_fd;
         goto err_sys_fd;
     }
 
-    if (kvm__check_extensions(kvm)) {
+    if (kvm_check_extensions(kvm)) {
         pr_err("A required KVM extension is not supported by OS");
         ret = -ENOSYS;
         goto err_vm_fd;
     }
 
-    kvm__arch_init(kvm);
+    kvm_arch_init(kvm);
 
     INIT_LIST_HEAD(&kvm->mem_banks);
-    kvm__init_ram(kvm);
+    kvm_init_ram(kvm);
 
-    if (!kvm->cfg.kernel.firmware_filename) {
-        if (!kvm__load_kernel(kvm, kvm->cfg.kernel.kernel_path, kvm->cfg.kernel.initrd_filename, kvm->cfg.real_cmdline))
-            die("unable to load kernel %s", kvm->cfg.kernel.kernel_path);
+    if (!kvm->cfg.firmware_path) {
+        if (!kvm_load_kernel(kvm, kvm->cfg.kernel_path, kvm->cfg.initrd_path, kvm->cfg.real_cmdline))
+            die("unable to load kernel %s", kvm->cfg.kernel_path);
     }
 
-    if (kvm->cfg.kernel.firmware_filename) {
-        if (!kvm__load_firmware(kvm, kvm->cfg.kernel.firmware_filename))
-            die("unable to load firmware image %s: %s", kvm->cfg.kernel.firmware_filename, strerror(errno));
+    if (kvm->cfg.firmware_path) {
+        if (!kvm_load_firmware(kvm, kvm->cfg.firmware_path))
+            die("unable to load firmware image %s: %s", kvm->cfg.firmware_path, strerror(errno));
     } else {
-        ret = kvm__arch_setup_firmware(kvm);
+        ret = kvm_arch_setup_firmware(kvm);
         if (ret < 0)
-            die("kvm__arch_setup_firmware() failed with error %d\n", ret);
+            die("kvm_arch_setup_firmware() failed with error %d\n", ret);
     }
 
     return 0;
@@ -473,16 +460,16 @@ int kvm__init(struct kvm *kvm) {
 err_vm_fd:
     close(kvm->vm_fd);
 err_sys_fd:
-    close(kvm->sys_fd);
+    close(kvm->kvm_fd);
 err_free:
     free(kvm);
 err:
     return ret;
 }
-core_init(kvm__init);
+core_init(kvm_init);
 
-bool kvm__load_kernel(struct kvm *kvm, const char *kernel_filename, const char *initrd_filename,
-                      const char *kernel_cmdline) {
+bool kvm_load_kernel(struct kvm *kvm, const char *kernel_filename, const char *initrd_filename,
+                     const char *kernel_cmdline) {
     bool ret;
     int fd_kernel = -1, fd_initrd = -1;
 
@@ -496,7 +483,7 @@ bool kvm__load_kernel(struct kvm *kvm, const char *kernel_filename, const char *
             die("Unable to open initrd %s", initrd_filename);
     }
 
-    ret = kvm__arch_load_kernel_image(kvm, fd_kernel, fd_initrd, kernel_cmdline);
+    ret = kvm_arch_load_kernel_image(kvm, fd_kernel, fd_initrd, kernel_cmdline);
 
     if (initrd_filename)
         close(fd_initrd);
@@ -507,7 +494,7 @@ bool kvm__load_kernel(struct kvm *kvm, const char *kernel_filename, const char *
     return ret;
 }
 
-void kvm__dump_mem(struct kvm *kvm, unsigned long addr, unsigned long size, int debug_fd) {
+void kvm_dump_mem(struct kvm *kvm, unsigned long addr, unsigned long size, int debug_fd) {
     unsigned char *p;
     unsigned long n;
 
@@ -536,7 +523,7 @@ void kvm__dump_mem(struct kvm *kvm, unsigned long addr, unsigned long size, int 
     }
 }
 
-void kvm__reboot(struct kvm *kvm) {
+void kvm_reboot(struct kvm *kvm) {
     /* Check if the guest is running */
     if (!kvm->cpus[0] || kvm->cpus[0]->thread == 0)
         return;
@@ -544,11 +531,11 @@ void kvm__reboot(struct kvm *kvm) {
     pthread_kill(kvm->cpus[0]->thread, SIGKVMEXIT);
 }
 
-void kvm__continue(struct kvm *kvm) {
+void kvm_continue(struct kvm *kvm) {
     mutex_unlock(&pause_lock);
 }
 
-void kvm__pause(struct kvm *kvm) {
+void kvm_pause(struct kvm *kvm) {
     int i, paused_vcpus = 0;
 
     mutex_lock(&pause_lock);
@@ -577,7 +564,7 @@ void kvm__pause(struct kvm *kvm) {
     close(pause_event);
 }
 
-void kvm__notify_paused(void) {
+void kvm_notify_paused(void) {
     u64 p = 1;
 
     if (write(pause_event, &p, sizeof(p)) < 0)

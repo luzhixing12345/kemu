@@ -91,7 +91,7 @@ static void *virtio_net_rx_thread(void *p) {
     u16 head;
     int len, copied;
 
-    kvm__set_thread_name("virtio-net-rx");
+    kvm_set_thread_name("virtio-net-rx");
 
     kvm = ndev->kvm;
     while (1) {
@@ -161,7 +161,7 @@ static void *virtio_net_tx_thread(void *p) {
     u16 head;
     int len;
 
-    kvm__set_thread_name("virtio-net-tx");
+    kvm_set_thread_name("virtio-net-tx");
 
     kvm = ndev->kvm;
 
@@ -208,7 +208,7 @@ static void *virtio_net_ctrl_thread(void *p) {
     virtio_net_ctrl_ack ack;
     size_t len;
 
-    kvm__set_thread_name("virtio-net-ctrl");
+    kvm_set_thread_name("virtio-net-ctrl");
 
     while (1) {
         mutex_lock(&queue->lock);
@@ -708,8 +708,10 @@ static int set_net_param(struct kvm *kvm, struct virtio_net_params *p, const cha
         } else if (!strncmp(val, "none", 4)) {
             kvm->cfg.no_net = 1;
             return -1;
-        } else
-            die("Unknown network mode %s, please use user, tap or none", kvm->cfg.network.network);
+        } else {
+            struct vm *vm = VM(kvm);
+            die("Unknown network mode %s, please use user, tap or none", vm->cfg.network.network);
+        }
     } else if (strcmp(param, "script") == 0) {
         p->script = strdup(val);
     } else if (strcmp(param, "downscript") == 0) {
@@ -854,9 +856,9 @@ static int virtio_net__init_one(struct virtio_net_params *params) {
     return 0;
 }
 
-int virtio_net__init(struct kvm *kvm) {
+int virtio_net_init(struct vm *vm) {
     int i, r;
-
+    struct kvm *kvm = &vm->kvm;
     for (i = 0; i < kvm->cfg.num_net_devices; i++) {
         kvm->cfg.net_params[i].kvm = kvm;
         r = virtio_net__init_one(&kvm->cfg.net_params[i]);
@@ -868,14 +870,14 @@ int virtio_net__init(struct kvm *kvm) {
         static struct virtio_net_params net_params;
 
         net_params = (struct virtio_net_params){
-            .guest_ip = kvm->cfg.network.guest_ip,
-            .host_ip = kvm->cfg.network.host_ip,
+            .guest_ip = vm->cfg.network.guest_ip,
+            .host_ip = vm->cfg.network.host_ip,
             .kvm = kvm,
             .script = kvm->cfg.script,
             .mode = NET_MODE_USER,
         };
-        str_to_mac(kvm->cfg.network.guest_mac, net_params.guest_mac);
-        str_to_mac(kvm->cfg.network.host_mac, net_params.host_mac);
+        str_to_mac(vm->cfg.network.guest_mac, net_params.guest_mac);
+        str_to_mac(vm->cfg.network.host_mac, net_params.host_mac);
 
         r = virtio_net__init_one(&net_params);
         if (r < 0)
@@ -885,12 +887,13 @@ int virtio_net__init(struct kvm *kvm) {
     return 0;
 
 cleanup:
-    virtio_net__exit(kvm);
+    virtio_net_exit(vm);
     return r;
 }
-virtio_dev_init(virtio_net__init);
+virtio_dev_init(virtio_net_init);
 
-int virtio_net__exit(struct kvm *kvm) {
+int virtio_net_exit(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
     struct virtio_net_params *params;
     struct net_dev *ndev;
     struct list_head *ptr, *n;
@@ -910,4 +913,4 @@ int virtio_net__exit(struct kvm *kvm) {
 
     return 0;
 }
-virtio_dev_exit(virtio_net__exit);
+virtio_dev_exit(virtio_net_exit);

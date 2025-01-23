@@ -72,7 +72,7 @@ static void thread_pool__threadfunc_cleanup(void *param) {
 static void *thread_pool__threadfunc(void *param) {
     pthread_cleanup_push(thread_pool__threadfunc_cleanup, NULL);
 
-    kvm__set_thread_name("threadpool-worker");
+    kvm_set_thread_name("threadpool-worker");
 
     while (running) {
         struct thread_pool__job *curjob = NULL;
@@ -113,7 +113,7 @@ static int thread_pool__addthread(void) {
     return res;
 }
 
-int thread_pool__init(struct kvm *kvm) {
+int thread_pool_init(struct vm *vm) {
     unsigned long i;
     unsigned int thread_count = sysconf(_SC_NPROCESSORS_ONLN);
 
@@ -125,9 +125,9 @@ int thread_pool__init(struct kvm *kvm) {
 
     return i;
 }
-late_init(thread_pool__init);
+late_init(thread_pool_init);
 
-int thread_pool__exit(struct kvm *kvm) {
+int thread_pool_exit(struct vm *vm) {
     int i;
     void *NUL = NULL;
 
@@ -145,7 +145,7 @@ int thread_pool__exit(struct kvm *kvm) {
 
     return 0;
 }
-late_exit(thread_pool__exit);
+late_exit(thread_pool_exit);
 
 void thread_pool__do_job(struct thread_pool__job *job) {
     struct thread_pool__job *jobinfo = job;

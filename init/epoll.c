@@ -7,11 +7,11 @@
 static void *epoll__thread(void *param) {
     u64 stop;
     int nfds, i;
-    struct kvm__epoll *epoll = param;
+    struct kvm_epoll *epoll = param;
     struct kvm *kvm = epoll->kvm;
     struct epoll_event events[EPOLLFD_MAX_EVENTS];
 
-    kvm__set_thread_name(epoll->name);
+    kvm_set_thread_name(epoll->name);
 
     for (;;) {
         nfds = epoll_wait(epoll->fd, events, EPOLLFD_MAX_EVENTS, -1);
@@ -30,7 +30,7 @@ done:
     return NULL;
 }
 
-int epoll__init(struct kvm *kvm, struct kvm__epoll *epoll, const char *name, epoll__event_handler_t handle_event) {
+int epoll__init(struct kvm *kvm, struct kvm_epoll *epoll, const char *name, epoll__event_handler_t handle_event) {
     int r;
     struct epoll_event stop_event = {
         .events = EPOLLIN,
@@ -69,7 +69,7 @@ err_close_fd:
     return r;
 }
 
-int epoll__exit(struct kvm__epoll *epoll) {
+int epoll__exit(struct kvm_epoll *epoll) {
     int r;
     u64 stop = 1;
 

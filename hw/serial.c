@@ -10,6 +10,7 @@
 #include "kvm/read-write.h"
 #include "kvm/term.h"
 #include "kvm/util.h"
+#include "vm/vm.h"
 
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 #define serial_iobase(nr)   (ARM_UART_MMIO_BASE + (nr)*0x1000)
@@ -170,11 +171,11 @@ static void serial8250_update_irq(struct kvm *kvm, struct serial8250_device *dev
     if (!iir) {
         dev->iir = UART_IIR_NO_INT;
         if (dev->irq_state)
-            kvm__irq_line(kvm, dev->irq, 0);
+            kvm_irq_line(kvm, dev->irq, 0);
     } else {
         dev->iir = iir;
         if (!dev->irq_state)
-            kvm__irq_line(kvm, dev->irq, 1);
+            kvm_irq_line(kvm, dev->irq, 1);
     }
     dev->irq_state = iir;
 
@@ -211,7 +212,8 @@ static void serial8250__receive(struct kvm *kvm, struct serial8250_device *dev, 
         return;
     }
 
-    if (kvm->cfg.device.active_console != CONSOLE_8250)
+    struct vm *vm = VM(kvm);
+    if (vm->cfg.device.active_console != CONSOLE_8250)
         return;
 
     while (term_readable(dev->id) && dev->rxcnt < FIFO_LEN) {
@@ -429,14 +431,15 @@ static int serial8250__device_init(struct kvm *kvm, struct serial8250_device *de
         return r;
 
     ioport__map_irq(&dev->irq);
-    r = kvm__register_iotrap(kvm, dev->iobase, 8, serial8250_mmio, dev, SERIAL8250_BUS_TYPE);
+    r = kvm_register_iotrap(kvm, dev->iobase, 8, serial8250_mmio, dev, SERIAL8250_BUS_TYPE);
 
     return r;
 }
 
-int serial8250__init(struct kvm *kvm) {
+int serial8250_init(struct vm *vm) {
     unsigned int i, j;
     int r = 0;
+    struct kvm *kvm = &vm->kvm;
 
     for (i = 0; i < ARRAY_SIZE(devices); i++) {
         struct serial8250_device *dev = &devices[i];
@@ -451,22 +454,23 @@ cleanup:
     for (j = 0; j <= i; j++) {
         struct serial8250_device *dev = &devices[j];
 
-        kvm__deregister_iotrap(kvm, dev->iobase, SERIAL8250_BUS_TYPE);
+        kvm_deregister_iotrap(kvm, dev->iobase, SERIAL8250_BUS_TYPE);
         device__unregister(&dev->dev_hdr);
     }
 
     return r;
 }
-dev_init(serial8250__init);
+dev_init(serial8250_init);
 
-int serial8250__exit(struct kvm *kvm) {
+int serial8250_exit(struct vm *vm) {
     unsigned int i;
     int r;
+    struct kvm *kvm = &vm->kvm;
 
     for (i = 0; i < ARRAY_SIZE(devices); i++) {
         struct serial8250_device *dev = &devices[i];
 
-        r = kvm__deregister_iotrap(kvm, dev->iobase, SERIAL8250_BUS_TYPE);
+        r = kvm_deregister_iotrap(kvm, dev->iobase, SERIAL8250_BUS_TYPE);
         if (r < 0)
             return r;
         device__unregister(&dev->dev_hdr);
@@ -474,4 +478,4 @@ int serial8250__exit(struct kvm *kvm) {
 
     return 0;
 }
-dev_exit(serial8250__exit);
+dev_exit(serial8250_exit);

@@ -1,10 +1,11 @@
 #pragma once
 #include <linux/types.h>
+#include <vm/vm.h>
 
 struct init_item {
     struct hlist_node n;
     const char *fn_name;
-    int (*init)();
+    int (*init)(struct vm *);
 };
 
 typedef enum {
@@ -18,11 +19,11 @@ typedef enum {
     MODULE_MAX
 } init_type;
 
-int init_list_init();
-int init_list_exit();
+int init_list_init(struct vm *vm);
+int init_list_exit(struct vm *vm);
 
-int init_list_add(struct init_item *t, int (*init)(), init_type type, const char *name);
-int exit_list_add(struct init_item *t, int (*init)(), init_type type, const char *name);
+int init_list_add(struct init_item *t, int (*init)(struct vm *), init_type type, const char *name);
+int exit_list_add(struct init_item *t, int (*init)(struct vm *), init_type type, const char *name);
 
 #define __init_list_add(cb, l)                                    \
     static void __attribute__((constructor)) __init__##cb(void) { \

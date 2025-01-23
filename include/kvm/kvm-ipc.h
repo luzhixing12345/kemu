@@ -2,8 +2,7 @@
 #define KVM__IPC_H_
 
 #include <linux/types.h>
-
-#include "kvm/kvm.h"
+#include <vm/vm.h>
 
 enum {
     KVM_IPC_BALLOON = 1,
@@ -17,8 +16,8 @@ enum {
 };
 
 int kvm_ipc__register_handler(u32 type, void (*cb)(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg));
-int kvm_ipc__init(struct kvm *kvm);
-int kvm_ipc__exit(struct kvm *kvm);
+int kvm_ipc_init(struct vm *vm);
+int kvm_ipc_exit(struct vm *vm);
 
 int kvm_ipc__send(int fd, u32 type);
 int kvm_ipc__send_msg(int fd, u32 type, u32 len, u8 *msg);

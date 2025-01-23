@@ -44,7 +44,7 @@
 // {
 // 	printf("\n%s setup creates a new rootfs under %s.\n"
 // 		"This can be used later by the '-d' parameter of '%s run'.\n",
-// 		KVM_BINARY_NAME, kvm__get_dir(), KVM_BINARY_NAME);
+// 		KVM_BINARY_NAME, kvm_get_dir(), KVM_BINARY_NAME);
 // 	usage_with_options(setup_usage, setup_options);
 // }
 
@@ -124,7 +124,7 @@ static int extract_file(const char *guestfs_name, const char *filename, const vo
     char path[PATH_MAX];
     int fd, ret;
 
-    snprintf(path, PATH_MAX, "%s%s/%s", kvm__get_dir(), guestfs_name, filename);
+    snprintf(path, PATH_MAX, "%s%s/%s", kvm_get_dir(), guestfs_name, filename);
 
     fd = open(path, O_EXCL | O_CREAT | O_WRONLY, 0755);
     if (fd < 0) {
@@ -169,7 +169,7 @@ static int copy_passwd(const char *guestfs_name) {
     FILE *file;
     int ret;
 
-    snprintf(path, PATH_MAX, "%s%s/etc/passwd", kvm__get_dir(), guestfs_name);
+    snprintf(path, PATH_MAX, "%s%s/etc/passwd", kvm_get_dir(), guestfs_name);
 
     file = fopen(path, "w");
     if (!file)
@@ -188,7 +188,7 @@ static int make_guestfs_symlink(const char *guestfs_name, const char *path) {
     char target[PATH_MAX];
     char name[PATH_MAX];
 
-    snprintf(name, PATH_MAX, "%s%s%s", kvm__get_dir(), guestfs_name, path);
+    snprintf(name, PATH_MAX, "%s%s%s", kvm_get_dir(), guestfs_name, path);
 
     snprintf(target, PATH_MAX, "/host%s", path);
 
@@ -198,7 +198,7 @@ static int make_guestfs_symlink(const char *guestfs_name, const char *path) {
 static int make_dir(const char *dir) {
     char name[PATH_MAX];
 
-    snprintf(name, PATH_MAX, "%s%s", kvm__get_dir(), dir);
+    snprintf(name, PATH_MAX, "%s%s", kvm_get_dir(), dir);
 
     return mkdir(name, 0777);
 }
@@ -214,7 +214,7 @@ static void make_guestfs_dir(const char *guestfs_name, const char *dir) {
 void kvm_setup_resolv(const char *guestfs_name) {
     char path[PATH_MAX];
 
-    snprintf(path, PATH_MAX, "%s%s/etc/resolv.conf", kvm__get_dir(), guestfs_name);
+    snprintf(path, PATH_MAX, "%s%s/etc/resolv.conf", kvm_get_dir(), guestfs_name);
 
     copy_file("/etc/resolv.conf", path);
 }
@@ -256,12 +256,12 @@ int kvm_setup_create_new(const char *guestfs_name) {
 // 	r = do_setup(instance_name);
 // 	if (r == 0) {
 // 		pr_info("A new rootfs '%s' has been created in '%s%s'.",
-// 			instance_name, kvm__get_dir(), instance_name);
+// 			instance_name, kvm_get_dir(), instance_name);
 // 		pr_info("You can now start it by running the following command:");
 // 		pr_info("%s run -d %s", KVM_BINARY_NAME, instance_name);
 // 	} else {
 // 		pr_err("Unable to create rootfs in %s%s: %s",
-// 			kvm__get_dir(), instance_name, strerror(errno));
+// 			kvm_get_dir(), instance_name, strerror(errno));
 // 	}
 
 // 	return r;

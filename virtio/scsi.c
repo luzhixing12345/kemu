@@ -219,8 +219,9 @@ static int virtio_scsi_exit_one(struct kvm *kvm, struct scsi_dev *sdev) {
     return 0;
 }
 
-int virtio_scsi_init(struct kvm *kvm) {
+int virtio_scsi_init(struct vm *vm) {
     int i, r = 0;
+    struct kvm *kvm = &vm->kvm;
 
     for (i = 0; i < kvm->nr_disks; i++) {
         if (!kvm->disks[i]->wwpn)
@@ -232,12 +233,13 @@ int virtio_scsi_init(struct kvm *kvm) {
 
     return 0;
 cleanup:
-    virtio_scsi_exit(kvm);
+    virtio_scsi_exit(vm);
     return r;
 }
 virtio_dev_init(virtio_scsi_init);
 
-int virtio_scsi_exit(struct kvm *kvm) {
+int virtio_scsi_exit(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
     while (!list_empty(&sdevs)) {
         struct scsi_dev *sdev;
 

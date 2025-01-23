@@ -109,8 +109,8 @@ static void kbd_update_irq(void) {
         mlevel = 1;
     }
 
-    kvm__irq_line(state.kvm, KBD_IRQ, klevel);
-    kvm__irq_line(state.kvm, AUX_IRQ, mlevel);
+    kvm_irq_line(state.kvm, KBD_IRQ, klevel);
+    kvm_irq_line(state.kvm, AUX_IRQ, mlevel);
 }
 
 /*
@@ -160,7 +160,7 @@ static void kbd_write_command(struct kvm *kvm, u8 val) {
             state.mode &= ~MODE_DISABLE_AUX;
             break;
         case I8042_CMD_SYSTEM_RESET:
-            kvm__reboot(kvm);
+            kvm_reboot(kvm);
             break;
         default:
             break;
@@ -178,13 +178,13 @@ static u8 kbd_read_data(void) {
         /* Keyboard data gets read first */
         ret = state.kq[state.kread++ % QUEUE_SIZE];
         state.kcount--;
-        kvm__irq_line(state.kvm, KBD_IRQ, 0);
+        kvm_irq_line(state.kvm, KBD_IRQ, 0);
         kbd_update_irq();
     } else if (state.mcount > 0) {
         /* Followed by the mouse */
         ret = state.mq[state.mread++ % QUEUE_SIZE];
         state.mcount--;
-        kvm__irq_line(state.kvm, AUX_IRQ, 0);
+        kvm_irq_line(state.kvm, AUX_IRQ, 0);
         kbd_update_irq();
     } else {
         i = state.kread - 1;
@@ -316,20 +316,21 @@ static void kbd_io(struct kvm_cpu *vcpu, u64 addr, u8 *data, u32 len, u8 is_writ
         ioport__write8(data, value);
 }
 
-static int kbd__init(struct kvm *kvm) {
+static int kbd_init(struct vm *vm) {
     int r;
+    struct kvm *kvm = &vm->kvm;
 
     kbd_reset();
     state.kvm = kvm;
-    r = kvm__register_pio(kvm, I8042_DATA_REG, 2, kbd_io, NULL);
+    r = kvm_register_pio(kvm, I8042_DATA_REG, 2, kbd_io, NULL);
     if (r < 0)
         return r;
-    r = kvm__register_pio(kvm, I8042_COMMAND_REG, 2, kbd_io, NULL);
+    r = kvm_register_pio(kvm, I8042_COMMAND_REG, 2, kbd_io, NULL);
     if (r < 0) {
-        kvm__deregister_pio(kvm, I8042_DATA_REG);
+        kvm_deregister_pio(kvm, I8042_DATA_REG);
         return r;
     }
 
     return 0;
 }
-dev_init(kbd__init);
+dev_init(kbd_init);

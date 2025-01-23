@@ -216,8 +216,9 @@ static int virtio_vsock_exit_one(struct kvm *kvm, struct vsock_dev *vdev) {
     return 0;
 }
 
-int virtio_vsock_init(struct kvm *kvm) {
+int virtio_vsock_init(struct vm *vm) {
     int r;
+    struct kvm *kvm = &vm->kvm;
 
     if (kvm->cfg.vsock_cid == 0)
         return 0;
@@ -228,11 +229,12 @@ int virtio_vsock_init(struct kvm *kvm) {
 
     return 0;
 cleanup:
-    return virtio_vsock_exit(kvm);
+    return virtio_vsock_exit(vm);
 }
 virtio_dev_init(virtio_vsock_init);
 
-int virtio_vsock_exit(struct kvm *kvm) {
+int virtio_vsock_exit(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
     while (!list_empty(&vdevs)) {
         struct vsock_dev *vdev;
 

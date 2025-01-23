@@ -50,7 +50,7 @@ static void kvm_cpu_signal_handler(int signum) {
         if (current_kvm_cpu->paused)
             die("Pause signaled for already paused CPU\n");
 
-        /* pause_lock is held by kvm__pause() */
+        /* pause_lock is held by kvm_pause() */
         current_kvm_cpu->paused = 1;
 
         /*
@@ -59,7 +59,7 @@ static void kvm_cpu_signal_handler(int signum) {
          * not be send to this thread until it acquires and releases
          * the pause_lock.
          */
-        kvm__notify_paused();
+        kvm_notify_paused();
     }
 
     /* For SIGKVMTASK cpu->task is already set */
@@ -220,7 +220,7 @@ int kvm_cpu__start(struct kvm_cpu *cpu) {
                          * Ensure that all VCPUs are torn down,
                          * regardless of which CPU generated the event.
                          */
-                        kvm__reboot(cpu->kvm);
+                        kvm_reboot(cpu->kvm);
                         goto exit_kvm;
                 };
                 break;
@@ -243,20 +243,21 @@ panic_kvm:
     return 1;
 }
 
-int kvm_cpu__init(struct kvm *kvm) {
+int kvm_cpu_init(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
     int max_cpus, recommended_cpus, i;
 
-    max_cpus = kvm__max_cpus(kvm);
-    recommended_cpus = kvm__recommended_cpus(kvm);
+    max_cpus = kvm_max_cpus(kvm);
+    recommended_cpus = kvm_recommended_cpus(kvm);
 
-    if (kvm->cfg.cpu.nrcpus > max_cpus) {
+    if (kvm->cfg.nrcpus > max_cpus) {
         pr_warning("Limiting the number of CPUs to %d", max_cpus);
-        kvm->cfg.cpu.nrcpus = max_cpus;
-    } else if (kvm->cfg.cpu.nrcpus > recommended_cpus) {
+        kvm->cfg.nrcpus = max_cpus;
+    } else if (kvm->cfg.nrcpus > recommended_cpus) {
         pr_warning("The maximum recommended amount of VCPUs is %d", recommended_cpus);
     }
 
-    kvm->nrcpus = kvm->cfg.cpu.nrcpus;
+    kvm->nrcpus = kvm->cfg.nrcpus;
 
     task_eventfd = eventfd(0, 0);
     if (task_eventfd < 0) {
@@ -285,16 +286,17 @@ fail_alloc:
     for (i = 0; i < kvm->nrcpus; i++) free(kvm->cpus[i]);
     return -ENOMEM;
 }
-base_init(kvm_cpu__init);
+base_init(kvm_cpu_init);
 
-int kvm_cpu__exit(struct kvm *kvm) {
+int kvm_cpu_exit(struct vm *vm) {
     int i, r;
     void *ret = NULL;
+    struct kvm *kvm = &vm->kvm;
 
     kvm_cpu__delete(kvm->cpus[0]);
     kvm->cpus[0] = NULL;
 
-    kvm__pause(kvm);
+    kvm_pause(kvm);
     for (i = 1; i < kvm->nrcpus; i++) {
         if (kvm->cpus[i]->is_running) {
             pthread_kill(kvm->cpus[i]->thread, SIGKVMEXIT);
@@ -305,7 +307,7 @@ int kvm_cpu__exit(struct kvm *kvm) {
         if (ret == NULL)
             r = 0;
     }
-    kvm__continue(kvm);
+    kvm_continue(kvm);
 
     free(kvm->cpus);
 

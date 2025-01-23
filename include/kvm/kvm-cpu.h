@@ -2,6 +2,7 @@
 #define KVM__KVM_CPU_H
 
 #include <stdbool.h>
+#include <vm/vm.h>
 
 #include "kvm/kvm-cpu-arch.h"
 
@@ -10,8 +11,8 @@ struct kvm_cpu_task {
     void *data;
 };
 
-int kvm_cpu__init(struct kvm *kvm);
-int kvm_cpu__exit(struct kvm *kvm);
+int kvm_cpu_init(struct vm *vm);
+int kvm_cpu_exit(struct vm *vm);
 struct kvm_cpu *kvm_cpu__arch_init(struct kvm *kvm, unsigned long cpu_id);
 void kvm_cpu__delete(struct kvm_cpu *vcpu);
 void kvm_cpu__reset_vcpu(struct kvm_cpu *vcpu);

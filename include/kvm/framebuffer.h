@@ -3,6 +3,7 @@
 
 #include <linux/list.h>
 #include <linux/types.h>
+#include <vm/vm.h>
 
 struct framebuffer;
 
@@ -30,7 +31,7 @@ struct framebuffer {
 
 struct framebuffer *fb__register(struct framebuffer *fb);
 int fb__attach(struct framebuffer *fb, struct fb_target_operations *ops);
-int fb__init(struct kvm *kvm);
-int fb__exit(struct kvm *kvm);
+int fb_init(struct vm *vm);
+int fb_exit(struct vm *vm);
 
 #endif /* KVM__FRAMEBUFFER_H */

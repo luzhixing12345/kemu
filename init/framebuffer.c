@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 
-#include "kvm/kvm.h"
-
 static LIST_HEAD(framebuffers);
 
 struct framebuffer *fb__register(struct framebuffer *fb) {
@@ -43,7 +41,7 @@ static int start_targets(struct framebuffer *fb) {
     return 0;
 }
 
-int fb__init(struct kvm *kvm) {
+int fb_init(struct vm *vm) {
     struct framebuffer *fb;
 
     list_for_each_entry(fb, &framebuffers, node) {
@@ -56,9 +54,9 @@ int fb__init(struct kvm *kvm) {
 
     return 0;
 }
-firmware_init(fb__init);
+firmware_init(fb_init);
 
-int fb__exit(struct kvm *kvm) {
+int fb_exit(struct vm *vm) {
     struct framebuffer *fb;
 
     list_for_each_entry(fb, &framebuffers, node) {
@@ -73,4 +71,4 @@ int fb__exit(struct kvm *kvm) {
 
     return 0;
 }
-firmware_exit(fb__exit);
+firmware_exit(fb_exit);

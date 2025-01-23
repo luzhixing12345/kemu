@@ -1,9 +1,9 @@
 #ifndef KVM__VIRTIO_NET_H
 #define KVM__VIRTIO_NET_H
 
-#include "kvm/parse-options.h"
+#include <vm/vm.h>
 
-struct kvm;
+#include "kvm/parse-options.h"
 
 struct virtio_net_params {
     const char *guest_ip;
@@ -21,8 +21,8 @@ struct virtio_net_params {
     int mq;
 };
 
-int virtio_net__init(struct kvm *kvm);
-int virtio_net__exit(struct kvm *kvm);
+int virtio_net__init(struct vm *vm);
+int virtio_net_exit(struct vm *vm);
 int netdev_parser(const struct option *opt, const char *arg, int unset);
 
 enum { NET_MODE_USER, NET_MODE_TAP };

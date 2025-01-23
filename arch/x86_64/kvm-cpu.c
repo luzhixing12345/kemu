@@ -96,7 +96,7 @@ struct kvm_cpu *kvm_cpu__arch_init(struct kvm *kvm, unsigned long cpu_id) {
     if (vcpu->vcpu_fd < 0)
         die_perror("KVM_CREATE_VCPU ioctl");
 
-    mmap_size = ioctl(vcpu->kvm->sys_fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+    mmap_size = ioctl(vcpu->kvm->kvm_fd, KVM_GET_VCPU_MMAP_SIZE, 0);
     if (mmap_size < 0)
         die_perror("KVM_GET_VCPU_MMAP_SIZE ioctl");
 
@@ -104,7 +104,7 @@ struct kvm_cpu *kvm_cpu__arch_init(struct kvm *kvm, unsigned long cpu_id) {
     if (vcpu->kvm_run == MAP_FAILED)
         die("unable to mmap vcpu fd");
 
-    coalesced_offset = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_COALESCED_MMIO);
+    coalesced_offset = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_COALESCED_MMIO);
     if (coalesced_offset)
         vcpu->ring = (void *)vcpu->kvm_run + (coalesced_offset * PAGE_SIZE);
 
@@ -141,10 +141,8 @@ static struct kvm_msrs *kvm_msrs__new(size_t nmsrs) {
 #define MSR_IA32_MISC_ENABLE_FAST_STRING_BIT 0
 #define MSR_IA32_MISC_ENABLE_FAST_STRING     (1ULL << MSR_IA32_MISC_ENABLE_FAST_STRING_BIT)
 
-#define KVM_MSR_ENTRY(_index, _data)   \
-    (struct kvm_msr_entry) {           \
-        .index = _index, .data = _data \
-    }
+#define KVM_MSR_ENTRY(_index, _data) \
+    (struct kvm_msr_entry) { .index = _index, .data = _data }
 
 static void kvm_cpu__setup_msrs(struct kvm_cpu *vcpu) {
     unsigned long ndx = 0;
@@ -387,7 +385,7 @@ void kvm_cpu__show_code(struct kvm_cpu *vcpu) {
     dprintf(debug_fd, "\n Stack:\n");
     dprintf(debug_fd, " ------\n");
     dprintf(debug_fd, " rsp: [<%016lx>] \n", (unsigned long)vcpu->regs.rsp);
-    kvm__dump_mem(vcpu->kvm, vcpu->regs.rsp, 32, debug_fd);
+    kvm_dump_mem(vcpu->kvm, vcpu->regs.rsp, 32, debug_fd);
 }
 
 void kvm_cpu__show_page_tables(struct kvm_cpu *vcpu) {
