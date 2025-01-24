@@ -36,7 +36,7 @@ int ioeventfd_init(struct vm *vm) {
     if (!ioeventfd_avail)
         return 1; /* Not fatal, but let caller determine no-go. */
 
-    return epoll__init(kvm, &epoll, "ioeventfd-worker", ioeventfd__handle_event);
+    return epoll_init(kvm, &epoll, "ioeventfd-worker", ioeventfd__handle_event);
 }
 base_init(ioeventfd_init);
 

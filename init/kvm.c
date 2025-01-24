@@ -1,4 +1,5 @@
 #include <asm/unistd.h>
+#include <clib/clib.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <kvm/kvm-cpu.h>
@@ -14,7 +15,6 @@
 #include <linux/kvm.h>
 #include <linux/list.h>
 #include <signal.h>
-#include <simple-clib/logging.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>

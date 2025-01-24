@@ -7,8 +7,8 @@
  * more details.
  */
 
+#include <clib/clib.h>
 #include <pthread.h>
-#include <simple-clib/logging.h>
 #include <stdarg.h>
 #include <stdio.h>
 

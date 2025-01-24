@@ -26,7 +26,7 @@ static int virtio_vhost_start_poll(struct kvm *kvm) {
     if (epoll.fd)
         return 0;
 
-    if (epoll__init(kvm, &epoll, "vhost-irq-worker", virtio_vhost_signal_vq))
+    if (epoll_init(kvm, &epoll, "vhost-irq-worker", virtio_vhost_signal_vq))
         return -1;
 
     return 0;

@@ -1,20 +1,19 @@
 #include "kvm/kvm-ipc.h"
 
 #include <dirent.h>
+#include <kvm/8250-serial.h>
+#include <kvm/builtin-debug.h>
+#include <kvm/epoll.h>
+#include <kvm/kvm-cpu.h>
+#include <kvm/kvm.h>
+#include <kvm/read-write.h>
+#include <kvm/rwsem.h>
+#include <kvm/strbuf.h>
+#include <kvm/util.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
-
-#include "kvm/8250-serial.h"
-#include "kvm/builtin-debug.h"
-#include "kvm/epoll.h"
-#include "kvm/kvm-cpu.h"
-#include "kvm/kvm.h"
-#include "kvm/read-write.h"
-#include "kvm/rwsem.h"
-#include "kvm/strbuf.h"
-#include "kvm/util.h"
 
 struct kvm_ipc_head {
     u32 type;
@@ -193,7 +192,7 @@ int kvm_enumerate_instances(int (*callback)(const char *name, int fd)) {
     return ret;
 }
 
-int kvm_ipc__register_handler(u32 type, void (*cb)(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg)) {
+int kvm_ipc_register_handler(u32 type, void (*cb)(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg)) {
     if (type >= KVM_IPC_MAX_MSGS)
         return -ENOSPC;
 
@@ -300,7 +299,7 @@ done:
     return -1;
 }
 
-static void kvm_ipc__handle_event(struct kvm *kvm, struct epoll_event *ev) {
+static void kvm_ipc_handle_event(struct kvm *kvm, struct epoll_event *ev) {
     int fd = ev->data.fd;
 
     if (fd == server_fd) {
@@ -449,7 +448,7 @@ int kvm_ipc_init(struct vm *vm) {
 
     server_fd = sock;
 
-    ret = epoll__init(kvm, &epoll, "kvm-ipc", kvm_ipc__handle_event);
+    ret = epoll_init(kvm, &epoll, "kvm-ipc", kvm_ipc_handle_event);
     if (ret) {
         pr_err("Failed starting IPC thread");
         goto err;
@@ -458,17 +457,17 @@ int kvm_ipc_init(struct vm *vm) {
     ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = sock;
     if (epoll_ctl(epoll.fd, EPOLL_CTL_ADD, sock, &ev) < 0) {
-        pr_err("Failed adding socket to epoll");
+        ERR("Failed adding socket to epoll");
         ret = -EFAULT;
         goto err_epoll;
     }
 
-    kvm_ipc__register_handler(KVM_IPC_PID, kvm_pid);
-    kvm_ipc__register_handler(KVM_IPC_DEBUG, handle_debug);
-    kvm_ipc__register_handler(KVM_IPC_PAUSE, handle_pause);
-    kvm_ipc__register_handler(KVM_IPC_RESUME, handle_pause);
-    kvm_ipc__register_handler(KVM_IPC_STOP, handle_stop);
-    kvm_ipc__register_handler(KVM_IPC_VMSTATE, handle_vmstate);
+    kvm_ipc_register_handler(KVM_IPC_PID, kvm_pid);
+    kvm_ipc_register_handler(KVM_IPC_DEBUG, handle_debug);
+    kvm_ipc_register_handler(KVM_IPC_PAUSE, handle_pause);
+    kvm_ipc_register_handler(KVM_IPC_RESUME, handle_pause);
+    kvm_ipc_register_handler(KVM_IPC_STOP, handle_stop);
+    kvm_ipc_register_handler(KVM_IPC_VMSTATE, handle_vmstate);
     signal(SIGUSR1, handle_sigusr1);
 
     return 0;

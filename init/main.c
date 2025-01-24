@@ -1,9 +1,9 @@
+#include <clib/clib.h>
+#include <clib/xargparse.h>
 #include <kvm/init.h>
 #include <kvm/kvm.h>
 #include <kvm/term.h>
 #include <linux/err.h>
-#include <simple-clib/logging.h>
-#include <simple-clib/xargparse.h>
 #include <stdio.h>
 #include <vm/vm.h>
 

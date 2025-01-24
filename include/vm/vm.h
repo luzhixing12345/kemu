@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <clib/clib.h>
 #include <kvm/kvm.h>
 
 struct vm_config {

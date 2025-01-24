@@ -1,9 +1,12 @@
 
+#include <clib/clib.h>
 #include <kvm/term.h>
-#include <simple-clib/logging.h>
+#include <stdio.h>
 #include <string.h>
 #include <vm/vm.h>
 
+#include "clib/file.h"
+#include "kvm/kvm-config.h"
 #include "memory.h"
 
 static void get_kernel_real_cmdline(struct vm *vm) {
@@ -45,6 +48,7 @@ int vm_config_init(struct vm *vm) {
         return -EINVAL;
     }
     get_kernel_real_cmdline(vm);
+    kvm_config->kernel_path = vm_config->kernel.kernel_path;
     INFO("kernel: %s\n", vm_config->kernel.kernel_path);
 
     kvm_config->mem_addr = kvm_arch_default_ram_address();
@@ -106,8 +110,31 @@ int vm_config_init(struct vm *vm) {
         vm_config->network.guest_mac = DEFAULT_GUEST_MAC;
     }
     if (!vm_config->system.name) {
-        vm_config->system.name = DEFAULT_GUEST_NAME;
+        static char guest_name[32];
+        snprintf(guest_name, sizeof(guest_name), "%s-%d", DEFAULT_GUEST_NAME, getpid());
+        vm_config->system.name = guest_name;
         kvm_config->name = vm_config->system.name;
+        DEBUG("name: %s", vm_config->system.name);
+    }
+
+    return 0;
+}
+
+int vm_rootfs_init(struct vm *vm) {
+    char rootfs_path[32];
+    snprintf(rootfs_path, sizeof(rootfs_path), "%s/%s", DEFAULT_ROOTFS_PATH, KEMU);
+    // check if the rootfs exists, delete it if it does
+    if (path_exist(rootfs_path)) {
+        DEBUG("rootfs %s exists, delete it\n", rootfs_path);
+        if (del_dir(rootfs_path) < 0) {
+            ERR("failed to delete rootfs %s\n", rootfs_path);
+            return -1;
+        }
+    }
+    // create rootfs
+    if (mkdir(rootfs_path, 0755) < 0) {
+        ERR("failed to create rootfs %s\n", rootfs_path);
+        return -1;
     }
 
     return 0;
@@ -116,6 +143,7 @@ int vm_config_init(struct vm *vm) {
 int vm_init(struct vm *vm) {
     int ret = 0;
     vm_config_init(vm);
+    vm_rootfs_init(vm);
     init_list_init(vm);
     return ret;
 }

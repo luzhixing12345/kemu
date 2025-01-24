@@ -30,7 +30,7 @@ done:
     return NULL;
 }
 
-int epoll__init(struct kvm *kvm, struct kvm_epoll *epoll, const char *name, epoll__event_handler_t handle_event) {
+int epoll_init(struct kvm *kvm, struct kvm_epoll *epoll, const char *name, epoll__event_handler_t handle_event) {
     int r;
     struct epoll_event stop_event = {
         .events = EPOLLIN,

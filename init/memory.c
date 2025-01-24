@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "simple-clib/logging.h"
+#include "clib/clib.h"
 
 #define RAM_SIZE_RATIO 0.8
 #define MIN_RAM_SIZE   SZ_64M

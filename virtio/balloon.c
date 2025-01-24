@@ -260,8 +260,8 @@ int virtio_bln_init(struct vm *vm) {
     if (!kvm->cfg.balloon)
         return 0;
 
-    kvm_ipc__register_handler(KVM_IPC_BALLOON, handle_mem);
-    kvm_ipc__register_handler(KVM_IPC_STAT, virtio_bln__print_stats);
+    kvm_ipc_register_handler(KVM_IPC_BALLOON, handle_mem);
+    kvm_ipc_register_handler(KVM_IPC_STAT, virtio_bln__print_stats);
 
     g_bdev.stat_waitfd = eventfd(0, 0);
     memset(&g_bdev.config, 0, sizeof(struct virtio_balloon_config));

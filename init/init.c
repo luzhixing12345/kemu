@@ -1,8 +1,8 @@
 
 
+#include <clib/clib.h>
 #include <kvm/init.h>
 #include <linux/list.h>
-#include <simple-clib/logging.h>
 #include <vm/vm.h>
 
 static struct hlist_head init_lists[MODULE_MAX];

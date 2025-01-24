@@ -7,6 +7,7 @@
 #include "kvm/kvm-config-arch.h"
 #include "kvm/vfio.h"
 
+#define KEMU                     "kemu"
 #define DEFAULT_KVM_DEV          "/dev/kvm"
 #define DEFAULT_CONSOLE          "serial"
 #define DEFAULT_NETWORK          "user"
@@ -18,6 +19,7 @@
 #define DEFAULT_SCRIPT           "none"
 #define DEFAULT_SANDBOX_FILENAME "guest/sandbox.sh"
 #define DEFAULT_NRCPUS           1
+#define DEFAULT_ROOTFS_PATH      "/var/run"
 
 #define MIN_RAM_SIZE             SZ_64M
 
