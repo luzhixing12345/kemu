@@ -22,26 +22,8 @@ int loglevel = LOGLEVEL_INFO;
 void vm_validate_cfg(struct vm_config *config) {
 }
 
-int vm_run_init(struct vm *vm) {
-    return 0;
-}
-
-int vm_run_work() {
-    return 0;
-}
-
-void vm_run_exit() {
-    // init_list_exit();
-}
-
 int vm_run(struct vm *vm) {
     int ret = -EFAULT;
-
-    vm_run_init(vm);
-
-    ret = vm_run_work();
-    vm_run_exit();
-
     return ret;
 }
 
@@ -50,7 +32,7 @@ int main(int argc, const char **argv) {
     memset(&kemu_vm, 0, sizeof(struct kvm));
     argparse_option options[] = {
         // basic system boot options
-        XBOX_ARG_STR(&kemu_vm.cfg.system.name, NULL, "--name", "guest vm name", " <name>", "name"),
+        XBOX_ARG_STR(&kemu_vm.cfg.system.vm_name, NULL, "--name", "guest vm name", " <name>", "name"),
         XBOX_ARG_STR(&kemu_vm.cfg.kernel.kernel_path, NULL, "--kernel", "kernel binary path", " <bzImage>", "kernel"),
         XBOX_ARG_STR(
             &kemu_vm.cfg.kernel.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", "kernel-cmdline"),
@@ -96,6 +78,7 @@ int main(int argc, const char **argv) {
     vm_validate_cfg(&kemu_vm.cfg);
     vm_init(&kemu_vm);
     vm_run(&kemu_vm);
+    vm_exit(&kemu_vm);
     XBOX_free_argparse(&parser);
     return 0;
 }

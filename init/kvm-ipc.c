@@ -22,6 +22,7 @@ struct kvm_ipc_head {
 
 #define KVM_IPC_MAX_MSGS    16
 
+#define KVM_SOCK_NAME       "ipc"
 #define KVM_SOCK_SUFFIX     ".sock"
 #define KVM_SOCK_SUFFIX_LEN ((ssize_t)sizeof(KVM_SOCK_SUFFIX) - 1)
 
@@ -31,16 +32,17 @@ static DECLARE_RWSEM(msgs_rwlock);
 static int server_fd;
 static struct kvm_epoll epoll;
 
-static int kvm_create_socket(struct kvm *kvm) {
-    char full_name[PATH_MAX];
+static int kvm_create_socket(struct vm *vm) {
     int s;
     struct sockaddr_un local;
     int len, r;
+    static char socket_path[PATH_MAX];
+
+    snprintf(socket_path, sizeof(socket_path), "%s/%s%s", vm->cfg.system.rootfs_path, KVM_SOCK_NAME, KVM_SOCK_SUFFIX);
+    vm->cfg.system.rootfs_socket_path = socket_path;
 
     /* This usually 108 bytes long */
     BUILD_BUG_ON(sizeof(local.sun_path) < 32);
-
-    snprintf(full_name, sizeof(full_name), "%s/%s%s", kvm_get_dir(), kvm->cfg.name, KVM_SOCK_SUFFIX);
 
     s = socket(AF_UNIX, SOCK_STREAM, 0);
     if (s < 0) {
@@ -49,7 +51,7 @@ static int kvm_create_socket(struct kvm *kvm) {
     }
 
     local.sun_family = AF_UNIX;
-    strlcpy(local.sun_path, full_name, sizeof(local.sun_path));
+    strlcpy(local.sun_path, socket_path, sizeof(local.sun_path));
     len = strlen(local.sun_path) + sizeof(local.sun_family);
     r = bind(s, (struct sockaddr *)&local, len);
     /* Check for an existing socket file */
@@ -62,7 +64,7 @@ static int kvm_create_socket(struct kvm *kvm) {
              * for PID derived names, but could happen for user
              * provided guest names.
              */
-            pr_err("Guest socket file %s already exists.", full_name);
+            ERR("Guest socket file %s already exists.\n", socket_path);
             r = -EEXIST;
             goto fail;
         }
@@ -73,8 +75,8 @@ static int kvm_create_socket(struct kvm *kvm) {
              * above when creating a new guest, there is no
              * danger in just removing the file and re-trying.
              */
-            unlink(full_name);
-            pr_info("Removed ghost socket file \"%s\".", full_name);
+            unlink(socket_path);
+            INFO("Removed ghost socket file \"%s\".", socket_path);
             r = bind(s, (struct sockaddr *)&local, len);
         }
     }
@@ -443,7 +445,7 @@ static void handle_debug(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
 int kvm_ipc_init(struct vm *vm) {
     int ret;
     struct kvm *kvm = &vm->kvm;
-    int sock = kvm_create_socket(kvm);
+    int sock = kvm_create_socket(vm);
     struct epoll_event ev = {0};
 
     server_fd = sock;
@@ -457,7 +459,7 @@ int kvm_ipc_init(struct vm *vm) {
     ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = sock;
     if (epoll_ctl(epoll.fd, EPOLL_CTL_ADD, sock, &ev) < 0) {
-        ERR("Failed adding socket to epoll");
+        ERR("Failed adding socket to epoll\n");
         ret = -EFAULT;
         goto err_epoll;
     }
@@ -484,7 +486,7 @@ int kvm_ipc_exit(struct vm *vm) {
     epoll__exit(&epoll);
     close(server_fd);
 
-    kvm_remove_socket(vm->cfg.system.name);
+    kvm_remove_socket(vm->cfg.system.rootfs_socket_path);
 
     return 0;
 }

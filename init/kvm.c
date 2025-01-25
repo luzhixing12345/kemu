@@ -145,7 +145,6 @@ int kvm_exit(struct vm *vm) {
         free(bank);
     }
 
-    free(kvm);
     return 0;
 }
 core_exit(kvm_exit);

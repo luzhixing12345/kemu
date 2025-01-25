@@ -6,6 +6,7 @@
 #include <vm/vm.h>
 
 #include "clib/file.h"
+#include "kvm/init.h"
 #include "kvm/kvm-config.h"
 #include "memory.h"
 
@@ -109,20 +110,30 @@ int vm_config_init(struct vm *vm) {
     if (!vm_config->network.guest_mac) {
         vm_config->network.guest_mac = DEFAULT_GUEST_MAC;
     }
-    if (!vm_config->system.name) {
+    if (!vm_config->system.vm_name) {
         static char guest_name[32];
         snprintf(guest_name, sizeof(guest_name), "%s-%d", DEFAULT_GUEST_NAME, getpid());
-        vm_config->system.name = guest_name;
-        kvm_config->name = vm_config->system.name;
-        DEBUG("name: %s", vm_config->system.name);
+        vm_config->system.vm_name = guest_name;
+        kvm_config->name = vm_config->system.vm_name;
+        DEBUG("name: %s\n", vm_config->system.vm_name);
     }
 
     return 0;
 }
 
 int vm_rootfs_init(struct vm *vm) {
-    char rootfs_path[32];
-    snprintf(rootfs_path, sizeof(rootfs_path), "%s/%s", DEFAULT_ROOTFS_PATH, KEMU);
+    static char rootfs_path[64];
+    sprintf(rootfs_path, "%s/%s", DEFAULT_ROOTFS_PATH, vm->cfg.system.vm_name);
+    vm->cfg.system.rootfs_path = rootfs_path;
+
+    // if DEFAULT_ROOTFS_PATH does not exist, create it
+    if (!path_exist(DEFAULT_ROOTFS_PATH)) {
+        if (mkdir(DEFAULT_ROOTFS_PATH, 0755) < 0) {
+            ERR("failed to create rootfs %s\n", DEFAULT_ROOTFS_PATH);
+            return -1;
+        }
+    }
+
     // check if the rootfs exists, delete it if it does
     if (path_exist(rootfs_path)) {
         DEBUG("rootfs %s exists, delete it\n", rootfs_path);
@@ -136,7 +147,18 @@ int vm_rootfs_init(struct vm *vm) {
         ERR("failed to create rootfs %s\n", rootfs_path);
         return -1;
     }
+    INFO("create rootfs %s\n", rootfs_path);
+    return 0;
+}
 
+int vm_rootfs_exit(struct vm *vm) {
+    // delete rootfs
+    char *rootfs_path = vm->cfg.system.rootfs_path;
+    if (del_dir(rootfs_path) < 0) {
+        ERR("failed to delete rootfs %s\n", rootfs_path);
+        return -1;
+    }
+    DEBUG("delete rootfs %s\n", rootfs_path);
     return 0;
 }
 
@@ -146,4 +168,10 @@ int vm_init(struct vm *vm) {
     vm_rootfs_init(vm);
     init_list_init(vm);
     return ret;
+}
+
+int vm_exit(struct vm *vm) {
+    init_list_exit(vm);
+    vm_rootfs_exit(vm);
+    return 0;
 }

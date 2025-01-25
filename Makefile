@@ -25,7 +25,7 @@ ARCH ?= $(shell uname -m | sed -e s/i.86/i386/ -e s/ppc.*/powerpc/ \
 CROSS_COMPILE 	:=
 CC          	:= gcc
 TARGET      	:= kemu
-SRC_PATH    	:= init include/simple-clib virtio disk net
+SRC_PATH    	:= init include/clib virtio disk net
 SRC_EXT     	:= c
 THIRD_LIB   	:=
 INCLUDE_PATH 	:= include arch/$(ARCH)/include
@@ -39,7 +39,7 @@ OBJCOPY		:= objcopy
 # ------------------------- #
 #          FLAGS            #
 # ------------------------- #
-CFLAGS = -DCONFIG_VERSION=\"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)\"
+CFLAGS = -DCONFIG_VERSION=\"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)\" -g
 LDFLAGS =
 LIBS		= 
 LIBS		+= -lpthread

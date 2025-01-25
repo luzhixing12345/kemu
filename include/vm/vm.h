@@ -9,7 +9,9 @@ struct vm_config {
     struct disk_image_params disk_image[MAX_DISK_IMAGES];
     struct vfio_device_params *vfio_devices;
     struct {
-        const char *name;
+        const char *vm_name;
+        char *rootfs_path;         // /tmp/kemu/{vm_name}
+        char *rootfs_socket_path;  // /tmp/kemu/{vm_name}/ipc.sock
     } system;
     struct {
         u64 mem_addr; /* Guest memory physical base address, in bytes */
@@ -86,3 +88,4 @@ struct vm {
 };
 
 int vm_init(struct vm *vm);
+int vm_exit(struct vm *vm);
