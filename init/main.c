@@ -8,6 +8,7 @@
 #include <vm/vm.h>
 
 #include "kvm/kvm-config.h"
+#include "kvm/kvm-cpu.h"
 #include "kvm/mutex.h"
 #include "memory.h"
 
@@ -18,14 +19,6 @@
 
 __thread struct kvm_cpu *current_kvm_cpu;
 int loglevel = LOGLEVEL_INFO;
-
-void vm_validate_cfg(struct vm_config *config) {
-}
-
-int vm_run(struct vm *vm) {
-    int ret = -EFAULT;
-    return ret;
-}
 
 int main(int argc, const char **argv) {
     struct vm kemu_vm;

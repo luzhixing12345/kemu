@@ -10,9 +10,9 @@
 
 /**
  * @brief delete dir recursively
- * 
- * @param path 
- * @return int 
+ *
+ * @param path
+ * @return int
  */
 int del_dir(const char *path) {
     DIR *dir = opendir(path);

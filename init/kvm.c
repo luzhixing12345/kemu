@@ -83,6 +83,37 @@ const char *kvm_get_dir(void) {
     return kvm_dir;
 }
 
+static void get_kernel_real_cmdline(struct vm *vm) {
+    static char real_cmdline[2048];
+    memset(real_cmdline, 0, sizeof(real_cmdline));
+
+    switch (vm->cfg.device.active_console) {
+        case CONSOLE_HV:
+            /* Fallthrough */
+        case CONSOLE_VIRTIO:
+            strcat(real_cmdline, " console=hvc0");
+            break;
+        case CONSOLE_8250:
+            strcat(real_cmdline, " console=ttyS0");
+            break;
+        default:
+            WARNING("Unknown console type: %d\n", vm->cfg.device.active_console);
+            break;
+    }
+
+    if (!vm->cfg.kernel.kernel_cmdline || !strstr(vm->cfg.kernel.kernel_cmdline, "root=")) {
+        strcat(real_cmdline, " root=/dev/vda rw ");
+    }
+
+    if (vm->cfg.kernel.kernel_cmdline) {
+        strcat(real_cmdline, " ");
+        strcat(real_cmdline, vm->cfg.kernel.kernel_cmdline);
+    }
+
+    vm->cfg.kernel.real_kernel_cmdline = real_cmdline;
+    INFO("real kernel cmdline: %s\n", real_cmdline);
+}
+
 bool kvm_supports_vm_extension(struct kvm *kvm, unsigned int extension) {
     static int supports_vm_ext_check = 0;
     int ret;
@@ -438,21 +469,29 @@ int kvm_init(struct vm *vm) {
     INIT_LIST_HEAD(&kvm->mem_banks);
     kvm_init_ram(kvm);
 
-    if (!kvm->cfg.firmware_path) {
-        if (!kvm_load_kernel(kvm, kvm->cfg.kernel_path, kvm->cfg.initrd_path, kvm->cfg.real_cmdline))
-            die("unable to load kernel %s", kvm->cfg.kernel_path);
+    if (!vm->cfg.kernel.firmware_path) {
+        get_kernel_real_cmdline(vm);
+        if (!kvm_load_kernel(
+                kvm, vm->cfg.kernel.kernel_path, vm->cfg.kernel.initrd_path, vm->cfg.kernel.real_kernel_cmdline)) {
+            ERR("unable to load kernel %s", vm->cfg.kernel.kernel_path);
+            return -1;
+        }
+        DEBUG("loaded kernel %s\n", vm->cfg.kernel.kernel_path);
     }
 
-    if (kvm->cfg.firmware_path) {
-        if (!kvm_load_firmware(kvm, kvm->cfg.firmware_path))
-            die("unable to load firmware image %s: %s", kvm->cfg.firmware_path, strerror(errno));
+    if (vm->cfg.kernel.firmware_path) {
+        if (!kvm_load_firmware(kvm, vm->cfg.kernel.firmware_path)) {
+            ERR("unable to load firmware image %s: %s", kvm->cfg.firmware_path, strerror(errno));
+            return -1;
+        }
     } else {
         ret = kvm_arch_setup_firmware(kvm);
-        if (ret < 0)
-            die("kvm_arch_setup_firmware() failed with error %d\n", ret);
+        if (ret < 0) {
+            ERR("kvm_arch_setup_firmware() failed with error %d\n", ret);
+        }
     }
 
-    return 0;
+    return ret;
 
 err_vm_fd:
     close(kvm->vm_fd);
@@ -470,12 +509,12 @@ bool kvm_load_kernel(struct kvm *kvm, const char *kernel_filename, const char *i
 
     fd_kernel = open(kernel_filename, O_RDONLY);
     if (fd_kernel < 0)
-        die("Unable to open kernel %s", kernel_filename);
+        DIE("Unable to open kernel %s", kernel_filename);
 
     if (initrd_filename) {
         fd_initrd = open(initrd_filename, O_RDONLY);
         if (fd_initrd < 0)
-            die("Unable to open initrd %s", initrd_filename);
+            DIE("Unable to open initrd %s", initrd_filename);
     }
 
     ret = kvm_arch_load_kernel_image(kvm, fd_kernel, fd_initrd, kernel_cmdline);
@@ -485,7 +524,8 @@ bool kvm_load_kernel(struct kvm *kvm, const char *kernel_filename, const char *i
     close(fd_kernel);
 
     if (!ret)
-        die("%s is not a valid kernel image", kernel_filename);
+        DIE("%s is not a valid kernel image", kernel_filename);
+
     return ret;
 }
 

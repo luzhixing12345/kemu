@@ -44,7 +44,7 @@ int ioeventfd_exit(struct vm *vm) {
     if (!ioeventfd_avail)
         return 0;
 
-    epoll__exit(&epoll);
+    epoll_exit(&epoll);
     return 0;
 }
 base_exit(ioeventfd_exit);

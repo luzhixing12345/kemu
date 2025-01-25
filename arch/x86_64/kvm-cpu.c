@@ -16,7 +16,7 @@
 
 static int debug_fd;
 
-void kvm_cpu__set_debug_fd(int fd) {
+void kvm_cpu_set_debug_fd(int fd) {
     debug_fd = fd;
 }
 
@@ -62,7 +62,7 @@ static struct kvm_cpu *kvm_cpu__new(struct kvm *kvm) {
     return vcpu;
 }
 
-void kvm_cpu__delete(struct kvm_cpu *vcpu) {
+void kvm_cpu_delete(struct kvm_cpu *vcpu) {
     if (vcpu->msrs)
         free(vcpu->msrs);
 
@@ -254,7 +254,7 @@ static void print_segment(const char *name, struct kvm_segment *seg) {
             seg->avl);
 }
 
-void kvm_cpu__show_registers(struct kvm_cpu *vcpu) {
+void kvm_cpu_show_registers(struct kvm_cpu *vcpu) {
     unsigned long cr0, cr2, cr3;
     unsigned long cr4, cr8;
     unsigned long rax, rbx, rcx;
@@ -341,7 +341,7 @@ void kvm_cpu__show_registers(struct kvm_cpu *vcpu) {
 
 #define MAX_SYM_LEN 128
 
-void kvm_cpu__show_code(struct kvm_cpu *vcpu) {
+void kvm_cpu_show_code(struct kvm_cpu *vcpu) {
     unsigned int code_bytes = 64;
     unsigned int code_prologue = 43;
     unsigned int code_len = code_bytes;
@@ -390,7 +390,7 @@ void kvm_cpu__show_code(struct kvm_cpu *vcpu) {
     kvm_dump_mem(vcpu->kvm, vcpu->regs.rsp, 32, debug_fd);
 }
 
-void kvm_cpu__show_page_tables(struct kvm_cpu *vcpu) {
+void kvm_cpu_show_page_tables(struct kvm_cpu *vcpu) {
     u64 *pte1;
     u64 *pte2;
     u64 *pte3;

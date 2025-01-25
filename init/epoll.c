@@ -69,7 +69,7 @@ err_close_fd:
     return r;
 }
 
-int epoll__exit(struct kvm_epoll *epoll) {
+int epoll_exit(struct kvm_epoll *epoll) {
     int r;
     u64 stop = 1;
 

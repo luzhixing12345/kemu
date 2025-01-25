@@ -99,10 +99,7 @@ fail:
 }
 
 void kvm_remove_socket(const char *name) {
-    char full_name[PATH_MAX];
-
-    snprintf(full_name, sizeof(full_name), "%s/%s%s", kvm_get_dir(), name, KVM_SOCK_SUFFIX);
-    unlink(full_name);
+    unlink(name);
 }
 
 int kvm_get_sock_by_instance(const char *name) {
@@ -385,9 +382,9 @@ static void handle_sigusr1(int sig) {
         return;
 
     dprintf(fd, "\n #\n # vCPU #%ld's dump:\n #\n", cpu->cpu_id);
-    kvm_cpu__show_registers(cpu);
-    kvm_cpu__show_code(cpu);
-    kvm_cpu__show_page_tables(cpu);
+    kvm_cpu_show_registers(cpu);
+    kvm_cpu_show_code(cpu);
+    kvm_cpu_show_page_tables(cpu);
     fflush(stdout);
     printout_done = 1;
 }
@@ -427,7 +424,7 @@ static void handle_debug(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
 
         printout_done = 0;
 
-        kvm_cpu__set_debug_fd(fd);
+        kvm_cpu_set_debug_fd(fd);
         pthread_kill(cpu->thread, SIGUSR1);
         /*
          * Wait for the vCPU to dump state before signalling
@@ -475,7 +472,7 @@ int kvm_ipc_init(struct vm *vm) {
     return 0;
 
 err_epoll:
-    epoll__exit(&epoll);
+    epoll_exit(&epoll);
     close(server_fd);
 err:
     return ret;
@@ -483,7 +480,7 @@ err:
 base_init(kvm_ipc_init);
 
 int kvm_ipc_exit(struct vm *vm) {
-    epoll__exit(&epoll);
+    epoll_exit(&epoll);
     close(server_fd);
 
     kvm_remove_socket(vm->cfg.system.rootfs_socket_path);

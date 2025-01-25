@@ -34,7 +34,7 @@ static int virtio_vhost_start_poll(struct kvm *kvm) {
 
 static int virtio_vhost_stop_poll(struct vm *vm) {
     if (epoll.fd)
-        epoll__exit(&epoll);
+        epoll_exit(&epoll);
     return 0;
 }
 base_exit(virtio_vhost_stop_poll);

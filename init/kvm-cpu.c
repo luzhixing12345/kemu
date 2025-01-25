@@ -10,13 +10,42 @@
 #include <sys/mman.h>
 
 #include "kvm/barrier.h"
-#include "kvm/kvm.h"
 #include "kvm/mutex.h"
 #include "kvm/symbol.h"
 #include "kvm/util.h"
 #include "kvm/virtio.h"
 
 extern __thread struct kvm_cpu *current_kvm_cpu;
+
+void *kvm_cpu_thread(void *arg) {
+    char name[16];
+
+    current_kvm_cpu = arg;
+
+    sprintf(name, "kvm-vcpu-%lu", current_kvm_cpu->cpu_id);
+    kvm_set_thread_name(name);
+
+    if (kvm_cpu_start(current_kvm_cpu))
+        goto panic_kvm;
+
+    return (void *)(intptr_t)0;
+
+panic_kvm:
+    ERR("KVM exit reason: %u (\"%s\")",
+        current_kvm_cpu->kvm_run->exit_reason,
+        kvm_exit_reasons[current_kvm_cpu->kvm_run->exit_reason]);
+
+    if (current_kvm_cpu->kvm_run->exit_reason == KVM_EXIT_UNKNOWN) {
+        ERR("KVM exit code: %llu", (unsigned long long)current_kvm_cpu->kvm_run->hw.hardware_exit_reason);
+    }
+
+    kvm_cpu_set_debug_fd(STDOUT_FILENO);
+    kvm_cpu_show_registers(current_kvm_cpu);
+    kvm_cpu_show_code(current_kvm_cpu);
+    kvm_cpu_show_page_tables(current_kvm_cpu);
+
+    return (void *)(intptr_t)1;
+}
 
 int __attribute__((weak)) kvm_cpu__get_endianness(struct kvm_cpu *vcpu) {
     return VIRTIO_ENDIAN_HOST;
@@ -31,7 +60,7 @@ void kvm_cpu__enable_singlestep(struct kvm_cpu *vcpu) {
         pr_warning("KVM_SET_GUEST_DEBUG failed");
 }
 
-void kvm_cpu__run(struct kvm_cpu *vcpu) {
+void kvm_cpu_run(struct kvm_cpu *vcpu) {
     int err;
 
     if (!vcpu->is_running)
@@ -130,7 +159,7 @@ void kvm_cpu__run_on_all_cpus(struct kvm *kvm, struct kvm_cpu_task *task) {
     mutex_unlock(&task_lock);
 }
 
-int kvm_cpu__start(struct kvm_cpu *cpu) {
+int kvm_cpu_start(struct kvm_cpu *cpu) {
     sigset_t sigset;
 
     sigemptyset(&sigset);
@@ -156,14 +185,14 @@ int kvm_cpu__start(struct kvm_cpu *cpu) {
         if (cpu->task)
             kvm_cpu__run_task(cpu);
 
-        kvm_cpu__run(cpu);
+        kvm_cpu_run(cpu);
 
         switch (cpu->kvm_run->exit_reason) {
             case KVM_EXIT_UNKNOWN:
                 break;
             case KVM_EXIT_DEBUG:
-                kvm_cpu__show_registers(cpu);
-                kvm_cpu__show_code(cpu);
+                kvm_cpu_show_registers(cpu);
+                kvm_cpu_show_code(cpu);
                 break;
             case KVM_EXIT_IO: {
                 bool ret;
@@ -293,7 +322,7 @@ int kvm_cpu_exit(struct vm *vm) {
     void *ret = NULL;
     struct kvm *kvm = &vm->kvm;
 
-    kvm_cpu__delete(kvm->cpus[0]);
+    kvm_cpu_delete(kvm->cpus[0]);
     kvm->cpus[0] = NULL;
 
     kvm_pause(kvm);
@@ -302,7 +331,7 @@ int kvm_cpu_exit(struct vm *vm) {
             pthread_kill(kvm->cpus[i]->thread, SIGKVMEXIT);
             if (pthread_join(kvm->cpus[i]->thread, &ret) != 0)
                 die("pthread_join");
-            kvm_cpu__delete(kvm->cpus[i]);
+            kvm_cpu_delete(kvm->cpus[i]);
         }
         if (ret == NULL)
             r = 0;

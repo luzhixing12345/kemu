@@ -14,4 +14,4 @@ struct kvm_epoll {
 };
 
 int epoll_init(struct kvm *kvm, struct kvm_epoll *epoll, const char *name, epoll__event_handler_t handle_event);
-int epoll__exit(struct kvm_epoll *epoll);
+int epoll_exit(struct kvm_epoll *epoll);

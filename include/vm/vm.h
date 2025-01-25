@@ -33,10 +33,11 @@ struct vm_config {
     int debug_iodelay;
     struct {
         const char *kernel_cmdline;
+        char *real_kernel_cmdline;
         const char *kernel_path;
         const char *vmlinux_filename;
-        const char *initrd_filename;
-        const char *firmware_filename;
+        const char *initrd_path;
+        const char *firmware_path;
     } kernel;
     struct {
         int nrcpus;
@@ -66,7 +67,6 @@ struct vm_config {
     const char *sandbox;
     const char *hugetlbfs_path;
     const char *custom_rootfs_name;
-    const char *real_cmdline;
     struct virtio_net_params *net_params;
     bool single_step;
     bool vnc;
@@ -89,3 +89,5 @@ struct vm {
 
 int vm_init(struct vm *vm);
 int vm_exit(struct vm *vm);
+int vm_validate_cfg(struct vm_config *config);
+int vm_run(struct vm *vm);

@@ -14,7 +14,7 @@ int init_list_init(struct vm *vm) {
     struct init_item *t;
 
     for (i = 0; i < ARRAY_SIZE(init_lists); i++) hlist_for_each_entry(t, &init_lists[i], n) {
-            DEBUG("call init: %s\n", t->fn_name);
+            // DEBUG("call init: %s\n", t->fn_name);
             r = t->init(vm);
             if (r < 0) {
                 WARNING("Failed init: %s\n", t->fn_name);
@@ -32,7 +32,7 @@ int init_list_exit(struct vm *vm) {
     struct init_item *t;
 
     for (i = ARRAY_SIZE(exit_lists) - 1; i >= 0; i--) hlist_for_each_entry(t, &exit_lists[i], n) {
-            DEBUG("call exit: %s\n", t->fn_name);
+            // DEBUG("call exit: %s\n", t->fn_name);
             r = t->init(vm);
             if (r < 0) {
                 WARNING("%s failed.\n", t->fn_name);

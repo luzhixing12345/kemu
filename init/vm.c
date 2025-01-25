@@ -1,56 +1,27 @@
 
 #include <clib/clib.h>
+#include <kvm/init.h>
+#include <kvm/kvm-config.h>
+#include <kvm/kvm-cpu.h>
 #include <kvm/term.h>
 #include <stdio.h>
 #include <string.h>
 #include <vm/vm.h>
 
-#include "clib/file.h"
-#include "kvm/init.h"
-#include "kvm/kvm-config.h"
 #include "memory.h"
 
-static void get_kernel_real_cmdline(struct vm *vm) {
-    static char real_cmdline[2048];
-    memset(real_cmdline, 0, sizeof(real_cmdline));
-    struct kvm *kvm = &vm->kvm;
-
-    switch (kvm->cfg.active_console) {
-        case CONSOLE_HV:
-            /* Fallthrough */
-        case CONSOLE_VIRTIO:
-            strcat(real_cmdline, " console=hvc0");
-            break;
-        case CONSOLE_8250:
-            strcat(real_cmdline, " console=ttyS0");
-            break;
+int vm_validate_cfg(struct vm_config *config) {
+    if (!config->kernel.kernel_path) {
+        ERR("kernel path is not set\n");
+        return -EINVAL;
     }
 
-    if (!vm->cfg.kernel.kernel_cmdline || !strstr(vm->cfg.kernel.kernel_cmdline, "root=")) {
-        strcat(real_cmdline, " root=/dev/vda rw ");
-    }
-
-    if (vm->cfg.kernel.kernel_cmdline) {
-        strcat(real_cmdline, " ");
-        strcat(real_cmdline, vm->cfg.kernel.kernel_cmdline);
-    }
-
-    kvm->cfg.real_cmdline = real_cmdline;
-    INFO("cmdline: %s\n", real_cmdline);
+    return 0;
 }
 
 int vm_config_init(struct vm *vm) {
     struct vm_config *vm_config = &vm->cfg;        // configuration of the vm
     struct kvm_config *kvm_config = &vm->kvm.cfg;  // configuration of the kvm
-
-    // kernel
-    if (!vm_config->kernel.kernel_path) {
-        ERR("kernel path is not set\n");
-        return -EINVAL;
-    }
-    get_kernel_real_cmdline(vm);
-    kvm_config->kernel_path = vm_config->kernel.kernel_path;
-    INFO("kernel: %s\n", vm_config->kernel.kernel_path);
 
     kvm_config->mem_addr = kvm_arch_default_ram_address();
 
@@ -114,7 +85,6 @@ int vm_config_init(struct vm *vm) {
         static char guest_name[32];
         snprintf(guest_name, sizeof(guest_name), "%s-%d", DEFAULT_GUEST_NAME, getpid());
         vm_config->system.vm_name = guest_name;
-        kvm_config->name = vm_config->system.vm_name;
         DEBUG("name: %s\n", vm_config->system.vm_name);
     }
 
@@ -160,6 +130,21 @@ int vm_rootfs_exit(struct vm *vm) {
     }
     DEBUG("delete rootfs %s\n", rootfs_path);
     return 0;
+}
+
+int vm_run(struct vm *vm) {
+    struct kvm *kvm = &vm->kvm;
+    for (int i = 0; i < kvm->nrcpus; i++) {
+        if (pthread_create(&kvm->cpus[i]->thread, NULL, kvm_cpu_thread, kvm->cpus[i]) != 0)
+            DIE("unable to create KVM VCPU thread");
+        DEBUG("vcpu %d created\n", i);
+    }
+
+    /* Only VCPU #0 is going to exit by itself when shutting down */
+    if (pthread_join(kvm->cpus[0]->thread, NULL) != 0)
+        DIE("unable to join with vcpu 0");
+
+    return kvm_cpu_exit(vm);
 }
 
 int vm_init(struct vm *vm) {
