@@ -36,7 +36,7 @@ int vm_config_init(struct vm *vm) {
         // see Overcommitment
         if (vm_config->cpu.nrcpus > nr_online_cpus) {
             WARNING(
-                "cpu number %u is greater than the number of online cpus %u\n", vm_config->cpu.nrcpus, nr_online_cpus);
+                "cpu number %u is greater than the number of online cpus %u", vm_config->cpu.nrcpus, nr_online_cpus);
         }
     }
     kvm_config->nrcpus = vm_config->cpu.nrcpus;
@@ -85,7 +85,7 @@ int vm_config_init(struct vm *vm) {
         static char guest_name[32];
         snprintf(guest_name, sizeof(guest_name), "%s-%d", DEFAULT_GUEST_NAME, getpid());
         vm_config->system.vm_name = guest_name;
-        DEBUG("name: %s\n", vm_config->system.vm_name);
+        DEBUG("name: %s", vm_config->system.vm_name);
     }
 
     return 0;
@@ -106,9 +106,9 @@ int vm_rootfs_init(struct vm *vm) {
 
     // check if the rootfs exists, delete it if it does
     if (path_exist(rootfs_path)) {
-        DEBUG("rootfs %s exists, delete it\n", rootfs_path);
+        DEBUG("rootfs %s exists, delete it", rootfs_path);
         if (del_dir(rootfs_path) < 0) {
-            ERR("failed to delete rootfs %s\n", rootfs_path);
+            ERR("failed to delete rootfs %s", rootfs_path);
             return -1;
         }
     }
@@ -117,7 +117,7 @@ int vm_rootfs_init(struct vm *vm) {
         ERR("failed to create rootfs %s\n", rootfs_path);
         return -1;
     }
-    INFO("create rootfs %s\n", rootfs_path);
+    INFO("create rootfs %s", rootfs_path);
     return 0;
 }
 
@@ -128,7 +128,7 @@ int vm_rootfs_exit(struct vm *vm) {
         ERR("failed to delete rootfs %s\n", rootfs_path);
         return -1;
     }
-    DEBUG("delete rootfs %s\n", rootfs_path);
+    DEBUG("delete rootfs %s", rootfs_path);
     return 0;
 }
 
@@ -137,7 +137,7 @@ int vm_run(struct vm *vm) {
     for (int i = 0; i < kvm->nrcpus; i++) {
         if (pthread_create(&kvm->cpus[i]->thread, NULL, kvm_cpu_thread, kvm->cpus[i]) != 0)
             DIE("unable to create KVM VCPU thread");
-        DEBUG("vcpu %d created\n", i);
+        DEBUG("vcpu %d created", i);
     }
 
     /* Only VCPU #0 is going to exit by itself when shutting down */
@@ -149,9 +149,16 @@ int vm_run(struct vm *vm) {
 
 int vm_init(struct vm *vm) {
     int ret = 0;
-    vm_config_init(vm);
-    vm_rootfs_init(vm);
-    init_list_init(vm);
+    ret = vm_config_init(vm);
+    if (ret < 0)
+        goto fail;
+    
+    ret = vm_rootfs_init(vm);
+    if (ret < 0)
+        goto fail;
+
+    ret = init_list_init(vm);
+fail:
     return ret;
 }
 

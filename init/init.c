@@ -17,7 +17,7 @@ int init_list_init(struct vm *vm) {
             // DEBUG("call init: %s\n", t->fn_name);
             r = t->init(vm);
             if (r < 0) {
-                WARNING("Failed init: %s\n", t->fn_name);
+                ERR("Failed init: %s", t->fn_name);
                 goto fail;
             }
         }
@@ -35,7 +35,7 @@ int init_list_exit(struct vm *vm) {
             // DEBUG("call exit: %s\n", t->fn_name);
             r = t->init(vm);
             if (r < 0) {
-                WARNING("%s failed.\n", t->fn_name);
+                WARNING("%s failed.", t->fn_name);
                 goto fail;
             }
         }

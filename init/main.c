@@ -67,10 +67,20 @@ int main(int argc, const char **argv) {
         free_argparse(&parser);
         return 0;
     }
-    vm_validate_cfg(&kemu_vm.cfg);
-    vm_init(&kemu_vm);
+
+    int ret = 0;
+    ret = vm_validate_cfg(&kemu_vm.cfg);
+    if (ret < 0)
+        goto end;
+
+    ret = vm_init(&kemu_vm);
+    if (ret < 0)
+        goto end;
+    
     vm_run(&kemu_vm);
     vm_exit(&kemu_vm);
+
+end:
     free_argparse(&parser);
     return 0;
 }

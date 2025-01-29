@@ -62,7 +62,7 @@ u64 calculate_ram_size(char *ram_size_str) {
 
     // If sscanf did not extract a valid number, return 0
     if (num_converted != 2 && num_converted != 1) {
-        WARNING("Mem size format should be [0-9]+[KMG]?, like 4K or 1G\n");
+        WARNING("Mem size format should be [0-9]+[KMG]?, like 4K or 1G");
         return 0;
     }
 
@@ -84,7 +84,7 @@ u64 calculate_ram_size(char *ram_size_str) {
             // Invalid unit, return 0
             return 0;
     }
-    DEBUG("ram_size: %llu\n", ram_size);
+    DEBUG("ram_size: %llu", ram_size);
 
     return ram_size;
 }

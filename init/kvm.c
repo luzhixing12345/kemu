@@ -97,7 +97,7 @@ static void get_kernel_real_cmdline(struct vm *vm) {
             strcat(real_cmdline, " console=ttyS0");
             break;
         default:
-            WARNING("Unknown console type: %d\n", vm->cfg.device.active_console);
+            WARNING("Unknown console type: %d", vm->cfg.device.active_console);
             break;
     }
 
@@ -111,7 +111,7 @@ static void get_kernel_real_cmdline(struct vm *vm) {
     }
 
     vm->cfg.kernel.real_kernel_cmdline = real_cmdline;
-    INFO("real kernel cmdline: %s\n", real_cmdline);
+    INFO("real kernel cmdline: %s", real_cmdline);
 }
 
 bool kvm_supports_vm_extension(struct kvm *kvm, unsigned int extension) {
@@ -476,7 +476,7 @@ int kvm_init(struct vm *vm) {
             ERR("unable to load kernel %s", vm->cfg.kernel.kernel_path);
             return -1;
         }
-        DEBUG("loaded kernel %s\n", vm->cfg.kernel.kernel_path);
+        DEBUG("loaded kernel %s", vm->cfg.kernel.kernel_path);
     }
 
     if (vm->cfg.kernel.firmware_path) {
