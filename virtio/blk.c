@@ -34,7 +34,7 @@ struct blk_dev_req {
     struct iovec iov[VIRTIO_BLK_QUEUE_SIZE];
     u16 out, in, head;
     u8 *status;
-    struct kvm *kvm;
+    struct vm *vm;
 };
 
 struct blk_dev {
@@ -53,7 +53,7 @@ struct blk_dev {
     pthread_t io_thread;
     int io_efd;
 
-    struct kvm *kvm;
+    struct vm *vm;
 };
 
 static LIST_HEAD(bdevs);
@@ -74,10 +74,10 @@ void virtio_blk_complete(void *param, long len) {
     mutex_unlock(&bdev->mutex);
 
     if (virtio_queue__should_signal(&bdev->vqs[queueid]))
-        bdev->vdev.ops->signal_vq(req->kvm, &bdev->vdev, queueid);
+        bdev->vdev.ops->signal_vq(&req->vm->kvm, &bdev->vdev, queueid);
 }
 
-static void virtio_blk_do_io_request(struct kvm *kvm, struct virt_queue *vq, struct blk_dev_req *req) {
+static void virtio_blk_do_io_request(struct vm *vm, struct virt_queue *vq, struct blk_dev_req *req) {
     struct virtio_blk_outhdr req_hdr;
     size_t iovcount, last_iov;
     struct blk_dev *bdev;
@@ -134,17 +134,17 @@ static void virtio_blk_do_io_request(struct kvm *kvm, struct virt_queue *vq, str
     }
 }
 
-static void virtio_blk_do_io(struct kvm *kvm, struct virt_queue *vq, struct blk_dev *bdev) {
+static void virtio_blk_do_io(struct vm *vm, struct virt_queue *vq, struct blk_dev *bdev) {
     struct blk_dev_req *req;
     u16 head;
 
     while (virt_queue__available(vq)) {
         head = virt_queue__pop(vq);
         req = &bdev->reqs[head];
-        req->head = virt_queue__get_head_iov(vq, req->iov, &req->out, &req->in, head, kvm);
+        req->head = virt_queue__get_head_iov(vq, req->iov, &req->out, &req->in, head, &vm->kvm);
         req->vq = vq;
 
-        virtio_blk_do_io_request(kvm, vq, req);
+        virtio_blk_do_io_request(vm, vq, req);
     }
 }
 
@@ -190,7 +190,7 @@ static void *virtio_blk_thread(void *dev) {
         r = read(bdev->io_efd, &data, sizeof(u64));
         if (r < 0)
             continue;
-        virtio_blk_do_io(bdev->kvm, &bdev->vqs[0], bdev);
+        virtio_blk_do_io(bdev->vm, &bdev->vqs[0], bdev);
     }
 
     pthread_exit(NULL);
@@ -211,7 +211,7 @@ static int init_vq(struct kvm *kvm, void *dev, u32 vq) {
     for (i = 0; i < ARRAY_SIZE(bdev->reqs); i++) {
         bdev->reqs[i] = (struct blk_dev_req){
             .bdev = bdev,
-            .kvm = kvm,
+            .vm = VM(kvm),
         };
     }
 
@@ -285,7 +285,7 @@ static struct virtio_ops blk_dev_virtio_ops = {
     .set_size_vq = set_size_vq,
 };
 
-static int virtio_blk_init_one(struct kvm *kvm, struct disk_image *disk) {
+static int virtio_blk_init_one(struct vm *vm, struct disk_image *disk) {
     struct blk_dev *bdev;
     int r;
 
@@ -299,16 +299,16 @@ static int virtio_blk_init_one(struct kvm *kvm, struct disk_image *disk) {
     *bdev = (struct blk_dev){
         .disk = disk,
         .capacity = disk->size / SECTOR_SIZE,
-        .kvm = kvm,
+        .vm = vm,
     };
 
     list_add_tail(&bdev->list, &bdevs);
 
-    r = virtio_init(kvm,
+    r = virtio_init(&vm->kvm,
                     bdev,
                     &bdev->vdev,
                     &blk_dev_virtio_ops,
-                    kvm->cfg.virtio_transport,
+                    vm->cfg.virtio_transport,
                     PCI_DEVICE_ID_VIRTIO_BLK,
                     VIRTIO_ID_BLOCK,
                     PCI_CLASS_BLK);
@@ -323,9 +323,9 @@ static int virtio_blk_init_one(struct kvm *kvm, struct disk_image *disk) {
     return 0;
 }
 
-static int virtio_blk__exit_one(struct kvm *kvm, struct blk_dev *bdev) {
+static int virtio_blk__exit_one(struct vm *vm, struct blk_dev *bdev) {
     list_del(&bdev->list);
-    virtio_exit(kvm, &bdev->vdev);
+    virtio_exit(&vm->kvm, &bdev->vdev);
     free(bdev);
 
     return 0;
@@ -333,12 +333,11 @@ static int virtio_blk__exit_one(struct kvm *kvm, struct blk_dev *bdev) {
 
 int virtio_blk_init(struct vm *vm) {
     int i, r = 0;
-    struct kvm *kvm = &vm->kvm;
 
-    for (i = 0; i < kvm->nr_disks; i++) {
-        if (kvm->disks[i]->wwpn)
+    for (i = 0; i < vm->nr_disks; i++) {
+        if (vm->disks[i].wwpn)
             continue;
-        r = virtio_blk_init_one(kvm, kvm->disks[i]);
+        r = virtio_blk_init_one(vm, &vm->disks[i]);
         if (r < 0)
             goto cleanup;
     }
@@ -351,12 +350,11 @@ cleanup:
 virtio_dev_init(virtio_blk_init);
 
 int virtio_blk_exit(struct vm *vm) {
-    struct kvm *kvm = &vm->kvm;
     while (!list_empty(&bdevs)) {
         struct blk_dev *bdev;
 
         bdev = list_first_entry(&bdevs, struct blk_dev, list);
-        virtio_blk__exit_one(kvm, bdev);
+        virtio_blk__exit_one(vm, bdev);
     }
 
     return 0;

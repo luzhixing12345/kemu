@@ -3,10 +3,10 @@
 
 #include <clib/clib.h>
 #include <kvm/kvm.h>
+#include "kvm/disk-image.h"
 
 struct vm_config {
     struct kvm_config_arch arch;
-    struct disk_image_params disk_image[MAX_DISK_IMAGES];
     struct vfio_device_params *vfio_devices;
     struct {
         const char *vm_name;
@@ -30,7 +30,6 @@ struct vm_config {
     u64 vsock_cid;
     bool virtio_rng;
     bool nodefaults;
-    int debug_iodelay;
     struct {
         const char *kernel_cmdline;
         char *real_kernel_cmdline;
@@ -49,7 +48,6 @@ struct vm_config {
         const char *hdb;
         const char *cdrom;
     } drive;
-    const char *flash_filename;
     struct {
         const char *network;
         const char *host_ip;
@@ -85,6 +83,10 @@ struct vm_config {
 struct vm {
     struct kvm kvm;
     struct vm_config cfg;
+
+    // Disks
+    int nr_disks;
+    struct disk_image *disks;
 };
 
 int vm_init(struct vm *vm);

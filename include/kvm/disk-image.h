@@ -54,11 +54,13 @@ struct disk_image_params {
 struct disk_image {
     int fd;
     u64 size;
+    const char *disk_path;
     struct disk_image_operations *ops;
-    void *priv;
+    void *priv;  // disk data
     void *disk_req_cb_param;
     void (*disk_req_cb)(void *param, long len);
     bool readonly;
+    int direct;
     bool async;
 #ifdef CONFIG_HAS_AIO
     io_context_t ctx;
@@ -75,15 +77,16 @@ struct vm;
 int disk_img_name_parser(const struct option *opt, const char *arg, int unset);
 int disk_image_init(struct vm *vm);
 int disk_image_exit(struct vm *vm);
-struct disk_image *disk_image__new(int fd, u64 size, struct disk_image_operations *ops, int mmap);
+int disk_image_new(struct disk_image *disk, int fd, u64 size, struct disk_image_operations *ops, int mmap);
 int disk_image__flush(struct disk_image *disk);
 int disk_image__wait(struct disk_image *disk);
 ssize_t disk_image__read(struct disk_image *disk, u64 sector, const struct iovec *iov, int iovcount, void *param);
 ssize_t disk_image__write(struct disk_image *disk, u64 sector, const struct iovec *iov, int iovcount, void *param);
 ssize_t disk_image__get_serial(struct disk_image *disk, struct iovec *iov, int iovcount, ssize_t len);
 
-struct disk_image *raw_image__probe(int fd, struct stat *st, bool readonly);
-struct disk_image *blkdev__probe(const char *filename, int flags, struct stat *st);
+int raw_image_probe(struct disk_image *disk, int fd, struct stat *st, bool readonly);
+bool is_blkdev(int fd, struct stat *st);
+int blkdev_probe(struct disk_image *disk, int fd, int readonly);
 
 ssize_t raw_image__read_sync(struct disk_image *disk, u64 sector, const struct iovec *iov, int iovcount, void *param);
 ssize_t raw_image__write_sync(struct disk_image *disk, u64 sector, const struct iovec *iov, int iovcount, void *param);

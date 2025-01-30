@@ -4,6 +4,7 @@
 #include <linux/list.h>
 #include <linux/rbtree.h>
 #include <linux/types.h>
+#include <kvm/disk-image.h>
 #include <stdbool.h>
 
 #include "kvm/mutex.h"
@@ -128,6 +129,7 @@ struct qcow2_header_disk {
     u64 snapshots_offset;
 };
 
-struct disk_image *qcow_probe(int fd, bool readonly);
+int qcow_probe(struct disk_image *disk, int fd, bool readonly);
+bool is_qcow(int fd);
 
 #endif /* KVM__QCOW_H */

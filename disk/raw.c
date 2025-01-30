@@ -73,24 +73,18 @@ struct disk_image_operations ro_ops_nowrite = {
     .async = true,
 };
 
-struct disk_image *raw_image__probe(int fd, struct stat *st, bool readonly) {
+int raw_image_probe(struct disk_image *disk, int fd, struct stat *st, bool readonly) {
+    disk->readonly = readonly;
     if (readonly) {
         /*
          * Use mmap's MAP_PRIVATE to implement non-persistent write
          * FIXME: This does not work on 32-bit host.
          */
-        struct disk_image *disk;
-
-        disk = disk_image__new(fd, st->st_size, &ro_ops, DISK_IMAGE_MMAP);
-        if (IS_ERR_OR_NULL(disk)) {
-            disk = disk_image__new(fd, st->st_size, &ro_ops_nowrite, DISK_IMAGE_REGULAR);
-        }
-
-        return disk;
+        return disk_image_new(disk, fd, st->st_size, &ro_ops, DISK_IMAGE_MMAP);
     } else {
         /*
          * Use read/write instead of mmap
          */
-        return disk_image__new(fd, st->st_size, &raw_image_regular_ops, DISK_IMAGE_REGULAR);
+        return disk_image_new(disk, fd, st->st_size, &raw_image_regular_ops, DISK_IMAGE_REGULAR);
     }
 }

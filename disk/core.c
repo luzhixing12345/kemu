@@ -2,6 +2,7 @@
 #include <poll.h>
 #include <vm/vm.h>
 
+#include "clib/log.h"
 #include "kvm/disk-image.h"
 #include "kvm/iovec.h"
 #include "kvm/qcow.h"
@@ -9,61 +10,53 @@
 
 int debug_iodelay;
 
-static int disk_image__close(struct disk_image *disk);
+static int disk_image_close(struct disk_image *disk);
 
-int disk_img_name_parser(const struct option *opt, const char *arg, int unset) {
-    const char *cur;
-    char *sep;
-    struct kvm *kvm = opt->ptr;
+// int disk_img_name_parser(const struct option *opt, const char *arg, int unset) {
+//     const char *cur;
+//     char *sep;
+//     struct kvm *kvm = opt->ptr;
 
-    if (kvm->nr_disks >= MAX_DISK_IMAGES)
-        die("Currently only 4 images are supported");
+//     if (kvm->nr_disks >= MAX_DISK_IMAGES)
+//         die("Currently only 4 images are supported");
 
-    kvm->cfg.disk_image[kvm->nr_disks].filename = arg;
-    cur = arg;
+//     kvm->cfg.disk_image[kvm->nr_disks].filename = arg;
+//     cur = arg;
 
-    if (strncmp(arg, "scsi:", 5) == 0) {
-        sep = strstr(arg, ":");
-        kvm->cfg.disk_image[kvm->nr_disks].wwpn = sep + 1;
+//     if (strncmp(arg, "scsi:", 5) == 0) {
+//         sep = strstr(arg, ":");
+//         kvm->cfg.disk_image[kvm->nr_disks].wwpn = sep + 1;
 
-        /* Old invocation had two parameters. Ignore the second one. */
-        sep = strstr(sep + 1, ":");
-        if (sep) {
-            *sep = 0;
-            cur = sep + 1;
-        }
-    }
+//         /* Old invocation had two parameters. Ignore the second one. */
+//         sep = strstr(sep + 1, ":");
+//         if (sep) {
+//             *sep = 0;
+//             cur = sep + 1;
+//         }
+//     }
 
-    do {
-        sep = strstr(cur, ",");
-        if (sep) {
-            if (strncmp(sep + 1, "ro", 2) == 0)
-                kvm->cfg.disk_image[kvm->nr_disks].readonly = true;
-            else if (strncmp(sep + 1, "direct", 6) == 0)
-                kvm->cfg.disk_image[kvm->nr_disks].direct = true;
-            *sep = 0;
-            cur = sep + 1;
-        }
-    } while (sep);
+//     do {
+//         sep = strstr(cur, ",");
+//         if (sep) {
+//             if (strncmp(sep + 1, "ro", 2) == 0)
+//                 kvm->cfg.disk_image[kvm->nr_disks].readonly = true;
+//             else if (strncmp(sep + 1, "direct", 6) == 0)
+//                 kvm->cfg.disk_image[kvm->nr_disks].direct = true;
+//             *sep = 0;
+//             cur = sep + 1;
+//         }
+//     } while (sep);
 
-    kvm->nr_disks++;
+//     kvm->nr_disks++;
 
-    return 0;
-}
+//     return 0;
+// }
 
-struct disk_image *disk_image__new(int fd, u64 size, struct disk_image_operations *ops, int use_mmap) {
-    struct disk_image *disk;
+int disk_image_new(struct disk_image *disk, int fd, u64 size, struct disk_image_operations *ops, int use_mmap) {
     int r;
-
-    disk = malloc(sizeof *disk);
-    if (!disk)
-        return ERR_PTR(-ENOMEM);
-
-    *disk = (struct disk_image){
-        .fd = fd,
-        .size = size,
-        .ops = ops,
-    };
+    disk->fd = fd;
+    disk->size = size;
+    disk->ops = ops;
 
     if (use_mmap == DISK_IMAGE_MMAP) {
         /*
@@ -80,20 +73,23 @@ struct disk_image *disk_image__new(int fd, u64 size, struct disk_image_operation
     if (r)
         goto err_unmap_disk;
 
-    return disk;
+    return 0;
 
 err_unmap_disk:
     if (disk->priv)
         munmap(disk->priv, size);
 err_free_disk:
     free(disk);
-    return ERR_PTR(r);
+    return r;
 }
 
-static struct disk_image *disk_image__open(const char *filename, bool readonly, bool direct) {
-    struct disk_image *disk;
+static int disk_image_open(struct disk_image *disk) {
+    const char *disk_path = disk->disk_path;
+    int direct = disk->direct;
+    int readonly = disk->readonly;
     struct stat st;
     int fd, flags;
+    int r;
 
     if (readonly)
         flags = O_RDONLY;
@@ -102,102 +98,51 @@ static struct disk_image *disk_image__open(const char *filename, bool readonly, 
     if (direct)
         flags |= O_DIRECT;
 
-    if (stat(filename, &st) < 0)
-        return ERR_PTR(-errno);
+    if (stat(disk_path, &st) < 0) {
+        ERR("Failed to stat %s: %s", disk_path, strerror(errno));
+        return -errno;
+    }
+
+    fd = open(disk_path, flags);
+    if (fd < 0) {
+        ERR("Failed to open %s: %s", disk_path, strerror(errno));
+        return -errno;
+    }
 
     /* blk device ?*/
-    disk = blkdev__probe(filename, flags, &st);
-    if (!IS_ERR_OR_NULL(disk)) {
-        disk->readonly = readonly;
-        return disk;
+    if (is_blkdev(fd, &st)) {
+        DEBUG("open blkdev %s", disk_path);
+        if (is_mounted(&st)) {
+            ERR("Block device %s is already mounted! Unmount before use.", disk_path);
+            return -EBUSY;
+        }
+        r = blkdev_probe(disk, fd, true);
+    } else if (is_qcow(fd)) {
+        /* qcow image ?*/
+        DEBUG("open qcow %s", disk_path);
+        r = qcow_probe(disk, fd, true);
+    } else {
+        /* raw image ?*/
+        DEBUG("open raw %s", disk_path);
+        r = raw_image_probe(disk, fd, &st, readonly);
     }
-
-    fd = open(filename, flags);
-    if (fd < 0)
-        return ERR_PTR(fd);
-
-    /* qcow image ?*/
-    disk = qcow_probe(fd, true);
-    if (!IS_ERR_OR_NULL(disk)) {
-        pr_warning("Forcing read-only support for QCOW");
-        disk->readonly = true;
-        return disk;
-    }
-
-    /* raw image ?*/
-    disk = raw_image__probe(fd, &st, readonly);
-    if (!IS_ERR_OR_NULL(disk)) {
-        disk->readonly = readonly;
-        return disk;
-    }
-
-    if (close(fd) < 0)
-        pr_warning("close() failed");
-
-    return ERR_PTR(-ENOSYS);
+    return r;
 }
 
-static struct disk_image **disk_image__open_all(struct kvm *kvm) {
-    struct disk_image **disks;
-    const char *filename;
-    const char *wwpn;
-    bool readonly;
-    bool direct;
-    void *err;
-    int i;
-    struct disk_image_params *params = (struct disk_image_params *)&kvm->cfg.disk_image;
-    int count = kvm->nr_disks;
+static int disk_image_open_all(struct vm *vm) {
+    struct disk_image *disks = vm->disks;
 
-    if (!count)
-        return ERR_PTR(-EINVAL);
-    if (count > MAX_DISK_IMAGES)
-        return ERR_PTR(-ENOSPC);
-
-    disks = calloc(count, sizeof(*disks));
-    if (!disks)
-        return ERR_PTR(-ENOMEM);
-
-    for (i = 0; i < count; i++) {
-        filename = params[i].filename;
-        readonly = params[i].readonly;
-        direct = params[i].direct;
-        wwpn = params[i].wwpn;
-
-        if (wwpn) {
-            disks[i] = malloc(sizeof(struct disk_image));
-            if (!disks[i]) {
-                err = ERR_PTR(-ENOMEM);
-                goto error;
-            }
-            disks[i]->wwpn = wwpn;
-            continue;
-        }
-
-        if (!filename)
-            continue;
-
-        disks[i] = disk_image__open(filename, readonly, direct);
-        if (IS_ERR_OR_NULL(disks[i])) {
-            pr_err("Loading disk image '%s' failed", filename);
-            err = disks[i];
+    for (int i = 0; i < vm->nr_disks; i++) {
+        DEBUG("open disk %s", disks[i].disk_path);
+        if (disk_image_open(&disks[i]) < 0) {
             goto error;
         }
-        disks[i]->debug_iodelay = kvm->cfg.debug_iodelay;
     }
 
-    return disks;
+    return 0;
 error:
-    for (i = 0; i < count; i++) {
-        if (IS_ERR_OR_NULL(disks[i]))
-            continue;
 
-        if (disks[i]->wwpn)
-            free(disks[i]);
-        else
-            disk_image__close(disks[i]);
-    }
-    free(disks);
-    return err;
+    return -1;
 }
 
 int disk_image__wait(struct disk_image *disk) {
@@ -214,7 +159,7 @@ int disk_image__flush(struct disk_image *disk) {
     return fsync(disk->fd);
 }
 
-static int disk_image__close(struct disk_image *disk) {
+static int disk_image_close(struct disk_image *disk) {
     /* If there was no disk image then there's nothing to do: */
     if (!disk)
         return 0;
@@ -225,17 +170,13 @@ static int disk_image__close(struct disk_image *disk) {
         return disk->ops->close(disk);
 
     if (disk->fd && close(disk->fd) < 0)
-        pr_warning("close() failed");
-
-    free(disk);
+        WARNING("close() failed");
 
     return 0;
 }
 
-static int disk_image__close_all(struct disk_image **disks, int count) {
-    while (count) disk_image__close(disks[--count]);
-
-    free(disks);
+static int disk_image_close_all(struct disk_image *disks, int nr_disks) {
+    while (nr_disks) disk_image_close(&disks[--nr_disks]);
 
     return 0;
 }
@@ -328,19 +269,12 @@ void disk_image__set_callback(struct disk_image *disk, void (*disk_req_cb)(void 
 }
 
 int disk_image_init(struct vm *vm) {
-    struct kvm *kvm = &vm->kvm;
-    if (kvm->nr_disks) {
-        kvm->disks = disk_image__open_all(kvm);
-        if (IS_ERR(kvm->disks))
-            return PTR_ERR(kvm->disks);
-    }
-
+    disk_image_open_all(vm);
     return 0;
 }
 dev_base_init(disk_image_init);
 
 int disk_image_exit(struct vm *vm) {
-    struct kvm *kvm = &vm->kvm;
-    return disk_image__close_all(kvm->disks, kvm->nr_disks);
+    return disk_image_close_all(vm->disks, vm->nr_disks);
 }
 dev_base_exit(disk_image_exit);

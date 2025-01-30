@@ -1193,15 +1193,14 @@ static void *qcow2_read_header(int fd) {
     return header;
 }
 
-static struct disk_image *qcow2_probe(int fd, bool readonly) {
-    struct disk_image *disk_image;
+static int qcow2_probe(struct disk_image *disk, int fd, bool readonly) {
     struct qcow_l1_table *l1t;
     struct qcow_header *h;
     struct qcow *q;
 
     q = calloc(1, sizeof(struct qcow));
     if (!q)
-        return NULL;
+        return -1;
 
     mutex_init(&q->mutex);
     q->fd = fd;
@@ -1248,17 +1247,12 @@ static struct disk_image *qcow2_probe(int fd, bool readonly) {
     /*
      * Do not use mmap use read/write instead
      */
-    if (readonly)
-        disk_image = disk_image__new(fd, h->size, &qcow_disk_readonly_ops, DISK_IMAGE_REGULAR);
-    else
-        disk_image = disk_image__new(fd, h->size, &qcow_disk_ops, DISK_IMAGE_REGULAR);
-
-    if (IS_ERR_OR_NULL(disk_image))
+    if (disk_image_new(disk, fd, h->size, readonly ? &qcow_disk_readonly_ops : &qcow_disk_ops, DISK_IMAGE_REGULAR) < 0)
         goto free_refcount_table;
 
-    disk_image->priv = q;
+    disk->priv = q;
 
-    return disk_image;
+    return 0;
 
 free_refcount_table:
     if (q->refcount_table.rf_table)
@@ -1281,10 +1275,10 @@ free_header:
 free_qcow:
     free(q);
 
-    return NULL;
+    return -1;
 }
 
-static bool qcow2_check_image(int fd) {
+static bool is_qcow2(int fd) {
     struct qcow2_header_disk f_header;
 
     if (pread_in_full(fd, &f_header, sizeof(struct qcow2_header_disk), 0) < 0)
@@ -1335,15 +1329,14 @@ static void *qcow1_read_header(int fd) {
     return header;
 }
 
-static struct disk_image *qcow1_probe(int fd, bool readonly) {
-    struct disk_image *disk_image;
+static int qcow1_probe(struct disk_image *disk, int fd, bool readonly) {
     struct qcow_l1_table *l1t;
     struct qcow_header *h;
     struct qcow *q;
 
     q = calloc(1, sizeof(struct qcow));
     if (!q)
-        return NULL;
+        return -1;
 
     mutex_init(&q->mutex);
     q->fd = fd;
@@ -1381,17 +1374,11 @@ static struct disk_image *qcow1_probe(int fd, bool readonly) {
     /*
      * Do not use mmap use read/write instead
      */
-    if (readonly)
-        disk_image = disk_image__new(fd, h->size, &qcow_disk_readonly_ops, DISK_IMAGE_REGULAR);
-    else
-        disk_image = disk_image__new(fd, h->size, &qcow_disk_ops, DISK_IMAGE_REGULAR);
-
-    if (!disk_image)
+    if (disk_image_new(disk, fd, h->size, readonly ? &qcow_disk_readonly_ops : &qcow_disk_ops, DISK_IMAGE_REGULAR) < 0)
         goto free_l1_table;
+    disk->priv = q;
 
-    disk_image->priv = q;
-
-    return disk_image;
+    return 0;
 
 free_l1_table:
     if (q->table.l1_table)
@@ -1408,10 +1395,10 @@ free_header:
 free_qcow:
     free(q);
 
-    return NULL;
+    return -1;
 }
 
-static bool qcow1_check_image(int fd) {
+static bool is_qcow1(int fd) {
     struct qcow1_header_disk f_header;
 
     if (pread_in_full(fd, &f_header, sizeof(struct qcow1_header_disk), 0) < 0)
@@ -1429,12 +1416,17 @@ static bool qcow1_check_image(int fd) {
     return true;
 }
 
-struct disk_image *qcow_probe(int fd, bool readonly) {
-    if (qcow1_check_image(fd))
-        return qcow1_probe(fd, readonly);
+bool is_qcow(int fd) {
+    return is_qcow1(fd) || is_qcow2(fd);
+}
 
-    if (qcow2_check_image(fd))
-        return qcow2_probe(fd, readonly);
+int qcow_probe(struct disk_image *disk, int fd, bool readonly) {
+    disk->readonly = readonly;
+    if (is_qcow1(fd))
+        return qcow1_probe(disk, fd, readonly);
 
-    return NULL;
+    if (is_qcow2(fd))
+        return qcow2_probe(disk, fd, readonly);
+
+    return -1;
 }

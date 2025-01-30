@@ -26,14 +26,12 @@ int main(int argc, const char **argv) {
         // basic system boot options
         ARG_STR(&kemu_vm.cfg.system.vm_name, NULL, "--name", "guest vm name", " <name>", "name"),
         ARG_STR(&kemu_vm.cfg.kernel.kernel_path, NULL, "--kernel", "kernel binary path", " <bzImage>", "kernel"),
-        ARG_STR(
-            &kemu_vm.cfg.kernel.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", "kernel-cmdline"),
-        ARG_STR(&kemu_vm.cfg.drive.disk_path, NULL, "--disk", "disk path", " <disk>", "disk"),
+        ARG_STR(&kemu_vm.cfg.kernel.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", "kernel-cmdline"),
         ARG_STR(&kemu_vm.cfg.memory.mem_size_str, "-m", NULL, "memory size", " <memory-size>", "memory"),
         ARG_INT(&kemu_vm.cfg.cpu.nrcpus, NULL, "--smp", "cpu number", " <cpus>", "cpu"),
-        ARG_STRS(
-            &kemu_vm.cfg.device.devices_str, NULL, "--device", "device" STORAGE_OPTION, " <device>", "device"),
+        ARG_STRS(&kemu_vm.cfg.device.devices_str, NULL, "--device", "device" STORAGE_OPTION, " <device>", "device"),
         // storage options
+        ARG_STR(&kemu_vm.cfg.drive.disk_path, NULL, "--disk", "disk path", " <disk>", "disk"),
         ARG_STRS(&kemu_vm.cfg.drive.drives_str, NULL, "--drive", "drive", " <driver>", "driver"),
         ARG_STR(&kemu_vm.cfg.drive.hda, NULL, "--hda", "harddisk", " <harddisk>", NULL),
         ARG_STR(&kemu_vm.cfg.drive.hdb, NULL, "--hdb", "harddisk", " <harddisk>", NULL),
@@ -76,7 +74,7 @@ int main(int argc, const char **argv) {
     ret = vm_init(&kemu_vm);
     if (ret < 0)
         goto end;
-    
+
     vm_run(&kemu_vm);
     vm_exit(&kemu_vm);
 

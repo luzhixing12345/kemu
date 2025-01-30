@@ -30,6 +30,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <vm/vm.h>
+#include "kvm/kvm.h"
 
 #define DEFINE_KVM_EXIT_REASON(reason) [reason] = #reason
 
@@ -86,6 +87,7 @@ const char *kvm_get_dir(void) {
 static void get_kernel_real_cmdline(struct vm *vm) {
     static char real_cmdline[2048];
     memset(real_cmdline, 0, sizeof(real_cmdline));
+    kvm_arch_set_cmdline(real_cmdline, false);
 
     switch (vm->cfg.device.active_console) {
         case CONSOLE_HV:
@@ -481,7 +483,7 @@ int kvm_init(struct vm *vm) {
 
     if (vm->cfg.kernel.firmware_path) {
         if (!kvm_load_firmware(kvm, vm->cfg.kernel.firmware_path)) {
-            ERR("unable to load firmware image %s: %s", kvm->cfg.firmware_path, strerror(errno));
+            ERR("unable to load firmware image %s: %s", vm->cfg.kernel.firmware_path, strerror(errno));
             return -1;
         }
     } else {

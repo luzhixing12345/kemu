@@ -24,16 +24,11 @@
 
 struct kvm_config {
     struct kvm_config_arch arch;
-    struct disk_image_params disk_image[MAX_DISK_IMAGES];
     struct vfio_device_params *vfio_devices;
     const char *name;
     const char *kvm_dev;
     const char *console;
     int active_console;
-    const char *kernel_path;
-    const char *firmware_path;
-    const char *initrd_path;
-    const char *real_cmdline;
     int nrcpus;
     u64 mem_addr; /* Guest memory physical base address, in bytes */
     u64 mem_size; /* Guest memory size, in bytes */

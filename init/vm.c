@@ -8,6 +8,7 @@
 #include <string.h>
 #include <vm/vm.h>
 
+#include "clib/log.h"
 #include "memory.h"
 
 int vm_validate_cfg(struct vm_config *config) {
@@ -19,6 +20,33 @@ int vm_validate_cfg(struct vm_config *config) {
     return 0;
 }
 
+static int vm_add_disk(struct vm *vm, const char *disk_path) {
+    // check if disk_path exists
+    if (!path_exist(disk_path)) {
+        ERR("disk path %s does not exist", disk_path);
+        return -ENOENT;
+    }
+    // check if disk_path is already added
+    for (int i = 0; i < vm->nr_disks; i++) {
+        // TODO: check if file is the same
+        if (vm->disks[i].disk_path == disk_path) {
+            WARNING("disk path %s is already added", disk_path);
+            return 0;
+        }
+    }
+
+    vm->nr_disks += 1;
+    vm->disks = realloc(vm->disks, vm->nr_disks * sizeof(struct disk_image));
+    if (!vm->disks) {
+        ERR("failed to allocate memory for vm->disks");
+        return -ENOMEM;
+    }
+    struct disk_image *new_disk = &vm->disks[vm->nr_disks - 1];
+    memset(new_disk, 0, sizeof(struct disk_image));
+    new_disk->disk_path = disk_path;
+    return 0;
+}
+
 int vm_config_init(struct vm *vm) {
     struct vm_config *vm_config = &vm->cfg;        // configuration of the vm
     struct kvm_config *kvm_config = &vm->kvm.cfg;  // configuration of the kvm
@@ -27,8 +55,6 @@ int vm_config_init(struct vm *vm) {
 
     // CPU
     if (!vm_config->cpu.nrcpus) {
-        vm_config->cpu.nrcpus = DEFAULT_NRCPUS;
-    } else {
         int nr_online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
         // KVM vCPU number can be greater than the number of online cpus
         // Virtual CPUs do not have to be mapped to physical CPU cores one by one;
@@ -38,6 +64,7 @@ int vm_config_init(struct vm *vm) {
             WARNING(
                 "cpu number %u is greater than the number of online cpus %u", vm_config->cpu.nrcpus, nr_online_cpus);
         }
+        vm_config->cpu.nrcpus = nr_online_cpus;
     }
     kvm_config->nrcpus = vm_config->cpu.nrcpus;
 
@@ -88,6 +115,20 @@ int vm_config_init(struct vm *vm) {
         DEBUG("name: %s", vm_config->system.vm_name);
     }
 
+    // Storage
+    vm->nr_disks = 0;
+    vm->disks = NULL;
+    if (vm->cfg.drive.disk_path) {
+        if (vm_add_disk(vm, vm->cfg.drive.disk_path) < 0) {
+            return -1;
+        }
+    }
+
+    if (vm->nr_disks == 0) {
+        ERR("no disk specified");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -136,7 +177,7 @@ int vm_run(struct vm *vm) {
     struct kvm *kvm = &vm->kvm;
     for (int i = 0; i < kvm->nrcpus; i++) {
         if (pthread_create(&kvm->cpus[i]->thread, NULL, kvm_cpu_thread, kvm->cpus[i]) != 0)
-            DIE("unable to create KVM VCPU thread");
+            ERR("unable to create KVM VCPU thread");
         DEBUG("vcpu %d created", i);
     }
 
@@ -152,7 +193,7 @@ int vm_init(struct vm *vm) {
     ret = vm_config_init(vm);
     if (ret < 0)
         goto fail;
-    
+
     ret = vm_rootfs_init(vm);
     if (ret < 0)
         goto fail;
@@ -165,5 +206,9 @@ fail:
 int vm_exit(struct vm *vm) {
     init_list_exit(vm);
     vm_rootfs_exit(vm);
+
+    if (vm->nr_disks) {
+        free(vm->disks);
+    }
     return 0;
 }

@@ -90,7 +90,6 @@ struct kvm {
     bool msix_needs_devid;
 
     const char *vmlinux;
-    struct disk_image **disks;
     int nr_disks;
 
     int vm_state;
