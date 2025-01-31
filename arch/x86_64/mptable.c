@@ -1,16 +1,16 @@
 #include "kvm/mptable.h"
 
 #include <asm/mpspec_def.h>
-#include <kvm/apic.h>
-#include <kvm/bios.h>
-#include <kvm/devices.h>
-#include <kvm/init.h>
-#include <kvm/kvm.h>
-#include <kvm/pci.h>
-#include <kvm/util.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <string.h>
+
+#include "kvm/apic.h"
+#include "kvm/bios.h"
+#include "kvm/devices.h"
+#include "kvm/kvm.h"
+#include "kvm/pci.h"
+#include "kvm/util.h"
 
 /*
  * FIXME: please make sure the addresses borrowed
@@ -63,7 +63,7 @@ static void mptable_add_irq_src(struct mpc_intsrc *mpc_intsrc, u16 srcbusid, u16
 /**
  * mptable_setup - create mptable and fill guest memory with it
  */
-int mptable_init(struct vm *vm) {
+int mptable__init(struct kvm *kvm) {
     unsigned long real_mpc_table, real_mpf_intel, size;
     struct mpf_intel *mpf_intel;
     struct mpc_table *mpc_table;
@@ -72,12 +72,11 @@ int mptable_init(struct vm *vm) {
     struct mpc_ioapic *mpc_ioapic;
     struct mpc_intsrc *mpc_intsrc;
     struct device_header *dev_hdr;
-    struct kvm *kvm = &vm->kvm;
 
     const int pcibusid = 0;
     const int isabusid = 1;
 
-    unsigned int i, nentries = 0, ncpus = vm->cfg.cpu.nrcpus;
+    unsigned int i, nentries = 0, ncpus = kvm->nrcpus;
     unsigned int ioapicid;
     void *last_addr;
 
@@ -259,9 +258,9 @@ int mptable_init(struct vm *vm) {
 
     return 0;
 }
-firmware_init(mptable_init);
+firmware_init(mptable__init);
 
-int mptable_exit(struct vm *vm) {
+int mptable__exit(struct kvm *kvm) {
     return 0;
 }
-firmware_exit(mptable_exit);
+firmware_exit(mptable__exit);

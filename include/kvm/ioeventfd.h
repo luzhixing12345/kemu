@@ -4,7 +4,6 @@
 #include <linux/list.h>
 #include <linux/types.h>
 #include <sys/eventfd.h>
-#include <vm/vm.h>
 
 #include "kvm/util.h"
 
@@ -26,8 +25,8 @@ struct ioevent {
 #define IOEVENTFD_FLAG_PIO       (1 << 0)
 #define IOEVENTFD_FLAG_USER_POLL (1 << 1)
 
-int ioeventfd_init(struct vm *vm);
-int ioeventfd_exit(struct vm *vm);
+int ioeventfd__init(struct kvm *kvm);
+int ioeventfd__exit(struct kvm *kvm);
 int ioeventfd__add_event(struct ioevent *ioevent, int flags);
 int ioeventfd__del_event(u64 addr, u64 datamatch);
 

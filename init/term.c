@@ -37,7 +37,7 @@ int term_getc(struct kvm *kvm, int term) {
     if (term_got_escape) {
         term_got_escape = false;
         if (c == 'x')
-            kvm_reboot(kvm);
+            kvm__reboot(kvm);
         if (c == term_escape_char)
             return c;
     }
@@ -99,7 +99,7 @@ static void *term_poll_thread_loop(void *param) {
     struct kvm *kvm = (struct kvm *)param;
     int i;
 
-    kvm_set_thread_name("term-poll");
+    kvm__set_thread_name("term-poll");
 
     for (i = 0; i < TERM_MAX_DEVS; i++) {
         fds[i].fd = term_fds[i][TERM_FD_IN];
@@ -111,7 +111,7 @@ static void *term_poll_thread_loop(void *param) {
         /* Poll with infinite timeout */
         if (poll(fds, TERM_MAX_DEVS, -1) < 1)
             break;
-        kvm_arch_read_term(kvm);
+        kvm__arch_read_term(kvm);
     }
 
     die("term_poll_thread_loop: error polling device fds %d\n", errno);
@@ -158,7 +158,7 @@ int tty_parser(const struct option *opt, const char *arg, int unset) {
     return 0;
 }
 
-static int term_init(struct vm *vm) {
+static int term_init(struct kvm *kvm) {
     struct termios term;
     int i, r;
 
@@ -183,7 +183,6 @@ static int term_init(struct vm *vm) {
     tcsetattr(STDIN_FILENO, TCSANOW, &term);
 
     /* Use our own blocking thread to read stdin, don't require a tick */
-    struct kvm *kvm = &vm->kvm;
     if (pthread_create(&term_poll_thread, NULL, term_poll_thread_loop, kvm))
         die("Unable to create console input poll thread\n");
 
@@ -194,7 +193,7 @@ static int term_init(struct vm *vm) {
 }
 dev_init(term_init);
 
-static int term_exit(struct vm *vm) {
+static int term_exit(struct kvm *kvm) {
     return 0;
 }
 dev_exit(term_exit);

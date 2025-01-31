@@ -205,9 +205,8 @@ static struct virtio_ops con_dev_virtio_ops = {
     .set_size_vq = set_size_vq,
 };
 
-int virtio_console_init(struct vm *vm) {
+int virtio_console_init(struct kvm *kvm) {
     int r;
-    struct kvm *kvm = &vm->kvm;
 
     if (kvm->cfg.active_console != CONSOLE_VIRTIO)
         return 0;
@@ -230,8 +229,7 @@ int virtio_console_init(struct vm *vm) {
 }
 virtio_dev_init(virtio_console_init);
 
-int virtio_console_exit(struct vm *vm) {
-    struct kvm *kvm = &vm->kvm;
+int virtio_console_exit(struct kvm *kvm) {
     virtio_exit(kvm, &g_cdev.vdev);
 
     return 0;

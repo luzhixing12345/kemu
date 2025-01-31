@@ -1,9 +1,9 @@
 #ifndef HASHTABLE_H
 #define HASHTABLE_H
 
+#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <pthread.h>
 
 /****************** DEFINTIIONS ******************/
 

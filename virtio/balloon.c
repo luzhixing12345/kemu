@@ -253,15 +253,14 @@ struct virtio_ops bln_dev_virtio_ops = {
     .get_vq_count = get_vq_count,
 };
 
-int virtio_bln_init(struct vm *vm) {
+int virtio_bln_init(struct kvm *kvm) {
     int r;
-    struct kvm *kvm = &vm->kvm;
 
     if (!kvm->cfg.balloon)
         return 0;
 
-    kvm_ipc_register_handler(KVM_IPC_BALLOON, handle_mem);
-    kvm_ipc_register_handler(KVM_IPC_STAT, virtio_bln__print_stats);
+    kvm_ipc__register_handler(KVM_IPC_BALLOON, handle_mem);
+    kvm_ipc__register_handler(KVM_IPC_STAT, virtio_bln__print_stats);
 
     g_bdev.stat_waitfd = eventfd(0, 0);
     memset(&g_bdev.config, 0, sizeof(struct virtio_balloon_config));
@@ -284,8 +283,7 @@ int virtio_bln_init(struct vm *vm) {
 }
 virtio_dev_init(virtio_bln_init);
 
-int virtio_bln_exit(struct vm *vm) {
-    struct kvm *kvm = &vm->kvm;
+int virtio_bln_exit(struct kvm *kvm) {
     virtio_exit(kvm, &g_bdev.vdev);
 
     return 0;

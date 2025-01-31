@@ -27,7 +27,7 @@ int irq__get_nr_allocated_lines(void) {
     return next_line - KVM_IRQ_OFFSET;
 }
 
-int irq_allocate_routing_entry(void) {
+int irq__allocate_routing_entry(void) {
     size_t table_size = sizeof(struct kvm_irq_routing);
     size_t old_size = table_size;
     int nr_entries = 0;
@@ -57,7 +57,7 @@ static bool check_for_irq_routing(struct kvm *kvm) {
     static int has_irq_routing = 0;
 
     if (has_irq_routing == 0) {
-        if (kvm_supports_extension(kvm, KVM_CAP_IRQ_ROUTING))
+        if (kvm__supports_extension(kvm, KVM_CAP_IRQ_ROUTING))
             has_irq_routing = 1;
         else
             has_irq_routing = -1;
@@ -71,7 +71,7 @@ static int irq__update_msix_routes(struct kvm *kvm, struct kvm_irq_routing_entry
 }
 
 static bool irq__default_can_signal_msi(struct kvm *kvm) {
-    return kvm_supports_extension(kvm, KVM_CAP_SIGNAL_MSI);
+    return kvm__supports_extension(kvm, KVM_CAP_SIGNAL_MSI);
 }
 
 static int irq__default_signal_msi(struct kvm *kvm, struct kvm_msi *msi) {
@@ -99,7 +99,7 @@ int irq__add_msix_route(struct kvm *kvm, struct msi_msg *msg, u32 device_id) {
     if (!check_for_irq_routing(kvm))
         return -ENXIO;
 
-    r = irq_allocate_routing_entry();
+    r = irq__allocate_routing_entry();
     if (r)
         return r;
 
@@ -186,8 +186,8 @@ void irq__common_del_irqfd(struct kvm *kvm, unsigned int gsi, int trigger_fd) {
     ioctl(kvm->vm_fd, KVM_IRQFD, &irqfd);
 }
 
-int __attribute__((weak)) irq_exit(struct vm *vm) {
+int __attribute__((weak)) irq__exit(struct kvm *kvm) {
     free(irq_routing);
     return 0;
 }
-dev_base_exit(irq_exit);
+dev_base_exit(irq__exit);

@@ -65,7 +65,7 @@ struct framebuffer *vesa__init(struct kvm *kvm) {
     BUILD_BUG_ON(VESA_MEM_SIZE < VESA_BPP / 8 * VESA_WIDTH * VESA_HEIGHT);
 
     vesa_base_addr = pci_get_io_port_block(PCI_IO_SIZE);
-    r = kvm_register_pio(kvm, vesa_base_addr, PCI_IO_SIZE, vesa_pci_io, NULL);
+    r = kvm__register_pio(kvm, vesa_base_addr, PCI_IO_SIZE, vesa_pci_io, NULL);
     if (r < 0)
         goto out_error;
 
@@ -85,7 +85,7 @@ struct framebuffer *vesa__init(struct kvm *kvm) {
         goto unregister_device;
     }
 
-    r = kvm_register_dev_mem(kvm, VESA_MEM_ADDR, VESA_MEM_SIZE, mem);
+    r = kvm__register_dev_mem(kvm, VESA_MEM_ADDR, VESA_MEM_SIZE, mem);
     if (r < 0)
         goto unmap_dev;
 
@@ -98,7 +98,7 @@ unmap_dev:
 unregister_device:
     device__unregister(&vesa_device);
 unregister_ioport:
-    kvm_deregister_pio(kvm, vesa_base_addr);
+    kvm__deregister_pio(kvm, vesa_base_addr);
 out_error:
     return ERR_PTR(r);
 }

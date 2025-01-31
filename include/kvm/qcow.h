@@ -1,10 +1,10 @@
 #ifndef KVM__QCOW_H
 #define KVM__QCOW_H
 
+#include <kvm/kvm.h>
 #include <linux/list.h>
 #include <linux/rbtree.h>
 #include <linux/types.h>
-#include <kvm/disk-image.h>
 #include <stdbool.h>
 
 #include "kvm/mutex.h"

@@ -190,7 +190,7 @@ static void *uip_tcp_socket_thread(void *p) {
     int len, left, ret;
     u8 *pos;
 
-    kvm_set_thread_name("uip-tcp");
+    kvm__set_thread_name("uip-tcp");
 
     sk = p;
 

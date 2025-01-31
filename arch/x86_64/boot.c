@@ -10,7 +10,7 @@
 #define BIOS_IP       0xfff0
 #define BIOS_SP       0x8000
 
-bool kvm_load_firmware(struct kvm *kvm, const char *firmware_filename) {
+bool kvm__load_firmware(struct kvm *kvm, const char *firmware_filename) {
     struct stat st;
     void *p;
     int fd;

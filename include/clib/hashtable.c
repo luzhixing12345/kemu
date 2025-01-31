@@ -227,7 +227,7 @@ int ht_erase(HashTable *table, void *key) {
         return HT_ERROR;
     if (key == NULL)
         return HT_ERROR;
-    
+
     pthread_mutex_lock(&table->lock);
     index = _ht_hash(table, key);
     node = table->nodes[index];

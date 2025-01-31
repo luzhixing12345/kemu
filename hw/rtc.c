@@ -156,7 +156,7 @@ int rtc__init(struct kvm *kvm) {
     if (r < 0)
         return r;
 
-    r = kvm_register_iotrap(kvm, RTC_BASE_ADDRESS, 2, cmos_ram_io, NULL, RTC_BUS_TYPE);
+    r = kvm__register_iotrap(kvm, RTC_BASE_ADDRESS, 2, cmos_ram_io, NULL, RTC_BUS_TYPE);
     if (r < 0)
         goto out_device;
 
@@ -173,7 +173,7 @@ out_device:
 dev_init(rtc__init);
 
 int rtc__exit(struct kvm *kvm) {
-    kvm_deregister_iotrap(kvm, RTC_BASE_ADDRESS, RTC_BUS_TYPE);
+    kvm__deregister_iotrap(kvm, RTC_BASE_ADDRESS, RTC_BUS_TYPE);
 
     return 0;
 }

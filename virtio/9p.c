@@ -1420,7 +1420,7 @@ int virtio_9p_img_name_parser(const struct option *opt, const char *arg, int uns
         return 0;
     }
 
-    snprintf(path, PATH_MAX, "%s%s", kvm_get_dir(), arg);
+    snprintf(path, PATH_MAX, "%s%s", kvm__get_dir(), arg);
 
     if (stat(path, &st) == 0 && S_ISDIR(st.st_mode)) {
         char tmp[PATH_MAX];
@@ -1441,10 +1441,9 @@ int virtio_9p_img_name_parser(const struct option *opt, const char *arg, int uns
     return -1;
 }
 
-int virtio_9p_init(struct vm *vm) {
+int virtio_9p__init(struct kvm *kvm) {
     struct p9_dev *p9dev;
     int r;
-    struct kvm *kvm = &vm->kvm;
 
     list_for_each_entry(p9dev, &devs, list) {
         r = virtio_init(kvm,
@@ -1461,11 +1460,10 @@ int virtio_9p_init(struct vm *vm) {
 
     return 0;
 }
-virtio_dev_init(virtio_9p_init);
+virtio_dev_init(virtio_9p__init);
 
-int virtio_9p_exit(struct vm *vm) {
+int virtio_9p__exit(struct kvm *kvm) {
     struct p9_dev *p9dev, *tmp;
-    struct kvm *kvm = &vm->kvm;
 
     list_for_each_entry_safe(p9dev, tmp, &devs, list) {
         list_del(&p9dev->list);
@@ -1475,7 +1473,7 @@ int virtio_9p_exit(struct vm *vm) {
 
     return 0;
 }
-virtio_dev_exit(virtio_9p_exit);
+virtio_dev_exit(virtio_9p__exit);
 
 int virtio_9p__register(struct kvm *kvm, const char *root, const char *tag_name) {
     struct p9_dev *p9dev;

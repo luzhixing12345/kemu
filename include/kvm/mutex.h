@@ -33,9 +33,4 @@ static inline void mutex_unlock(struct mutex *lock) {
         die("unexpected pthread_mutex_unlock() failure!");
 }
 
-static inline void mutex_destroy(struct mutex *lock) {
-    if (pthread_mutex_destroy(&lock->mutex) != 0)
-        die("unexpected pthread_mutex_destroy() failure!");
-}
-
 #endif /* KVM__MUTEX_H */

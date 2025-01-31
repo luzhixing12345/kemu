@@ -168,10 +168,9 @@ static void virtio_scsi_vhost_init(struct kvm *kvm, struct scsi_dev *sdev) {
     sdev->vdev.use_vhost = true;
 }
 
-static int virtio_scsi_init_one(struct vm *vm, struct disk_image *disk) {
+static int virtio_scsi_init_one(struct kvm *kvm, struct disk_image *disk) {
     struct scsi_dev *sdev;
     int r;
-    struct kvm *kvm = &vm->kvm;
 
     if (!disk)
         return -EINVAL;
@@ -220,25 +219,25 @@ static int virtio_scsi_exit_one(struct kvm *kvm, struct scsi_dev *sdev) {
     return 0;
 }
 
-int virtio_scsi_init(struct vm *vm) {
+int virtio_scsi_init(struct kvm *kvm) {
     int i, r = 0;
-    for (i = 0; i < vm->nr_disks; i++) {
-        if (!vm->disks[i].wwpn)
+
+    for (i = 0; i < kvm->nr_disks; i++) {
+        if (!kvm->disks[i].wwpn)
             continue;
-        r = virtio_scsi_init_one(vm, &vm->disks[i]);
+        r = virtio_scsi_init_one(kvm, &kvm->disks[i]);
         if (r < 0)
             goto cleanup;
     }
 
     return 0;
 cleanup:
-    virtio_scsi_exit(vm);
+    virtio_scsi_exit(kvm);
     return r;
 }
 virtio_dev_init(virtio_scsi_init);
 
-int virtio_scsi_exit(struct vm *vm) {
-    struct kvm *kvm = &vm->kvm;
+int virtio_scsi_exit(struct kvm *kvm) {
     while (!list_empty(&sdevs)) {
         struct scsi_dev *sdev;
 

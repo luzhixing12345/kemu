@@ -1,6 +1,9 @@
-#pragma once
+#ifndef KVM__BLN_VIRTIO_H
+#define KVM__BLN_VIRTIO_H
 
-#include <vm/vm.h>
+struct kvm;
 
-int virtio_bln_init(struct vm *vm);
-int virtio_bln_exit(struct vm *vm);
+int virtio_bln__init(struct kvm *kvm);
+int virtio_bln__exit(struct kvm *kvm);
+
+#endif /* KVM__BLN_VIRTIO_H */

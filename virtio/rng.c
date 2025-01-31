@@ -158,9 +158,8 @@ static struct virtio_ops rng_dev_virtio_ops = {
     .get_vq_count = get_vq_count,
 };
 
-int virtio_rng_init(struct vm *vm) {
+int virtio_rng__init(struct kvm *kvm) {
     struct rng_dev *rdev;
-    struct kvm *kvm = &vm->kvm;
     int r;
 
     if (!kvm->cfg.virtio_rng)
@@ -198,10 +197,9 @@ cleanup:
 
     return r;
 }
-virtio_dev_init(virtio_rng_init);
+virtio_dev_init(virtio_rng__init);
 
-int virtio_rng_exit(struct vm *vm) {
-    struct kvm *kvm = &vm->kvm;
+int virtio_rng__exit(struct kvm *kvm) {
     struct rng_dev *rdev, *tmp;
 
     list_for_each_entry_safe(rdev, tmp, &rdevs, list) {
@@ -212,4 +210,4 @@ int virtio_rng_exit(struct vm *vm) {
 
     return 0;
 }
-virtio_dev_exit(virtio_rng_exit);
+virtio_dev_exit(virtio_rng__exit);

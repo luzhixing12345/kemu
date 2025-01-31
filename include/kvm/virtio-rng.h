@@ -1,4 +1,9 @@
-#include <vm/vm.h>
+#ifndef KVM__RNG_VIRTIO_H
+#define KVM__RNG_VIRTIO_H
 
-int virtio_rng_init(struct vm *vm);
-int virtio_rng_exit(struct vm *vm);
+struct kvm;
+
+int virtio_rng__init(struct kvm *kvm);
+int virtio_rng__exit(struct kvm *kvm);
+
+#endif /* KVM__RNG_VIRTIO_H */

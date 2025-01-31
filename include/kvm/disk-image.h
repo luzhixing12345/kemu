@@ -72,11 +72,11 @@ struct disk_image {
     int debug_iodelay;
 };
 
-struct vm;
+struct kvm;
 
 int disk_img_name_parser(const struct option *opt, const char *arg, int unset);
-int disk_image_init(struct vm *vm);
-int disk_image_exit(struct vm *vm);
+int disk_image_init(struct kvm *kvm);
+int disk_image_exit(struct kvm *kvm);
 int disk_image_new(struct disk_image *disk, int fd, u64 size, struct disk_image_operations *ops, int mmap);
 int disk_image__flush(struct disk_image *disk);
 int disk_image__wait(struct disk_image *disk);

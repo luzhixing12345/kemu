@@ -7,7 +7,7 @@
 #include "kvm/irq.h"
 #include "kvm/virtio.h"
 
-static struct kvm_epoll epoll;
+static struct kvm__epoll epoll;
 
 static void virtio_vhost_signal_vq(struct kvm *kvm, struct epoll_event *ev) {
     int r;
@@ -26,15 +26,15 @@ static int virtio_vhost_start_poll(struct kvm *kvm) {
     if (epoll.fd)
         return 0;
 
-    if (epoll_init(kvm, &epoll, "vhost-irq-worker", virtio_vhost_signal_vq))
+    if (epoll__init(kvm, &epoll, "vhost-irq-worker", virtio_vhost_signal_vq))
         return -1;
 
     return 0;
 }
 
-static int virtio_vhost_stop_poll(struct vm *vm) {
+static int virtio_vhost_stop_poll(struct kvm *kvm) {
     if (epoll.fd)
-        epoll_exit(&epoll);
+        epoll__exit(&epoll);
     return 0;
 }
 base_exit(virtio_vhost_stop_poll);

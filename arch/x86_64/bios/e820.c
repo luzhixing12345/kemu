@@ -45,7 +45,7 @@ bioscall void e820_query_map(struct biosregs *regs) {
 
     ndx = regs->ebx;
 
-    map_size = rdfs32(flat_to_off16((u32)e820->nr_map, fs_seg));
+    map_size = rdfs32(flat_to_off16((u32)&e820->nr_map, fs_seg));
 
     if (ndx < map_size) {
         u32 start;

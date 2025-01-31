@@ -72,7 +72,7 @@ static void thread_pool__threadfunc_cleanup(void *param) {
 static void *thread_pool__threadfunc(void *param) {
     pthread_cleanup_push(thread_pool__threadfunc_cleanup, NULL);
 
-    kvm_set_thread_name("threadpool-worker");
+    kvm__set_thread_name("threadpool-worker");
 
     while (running) {
         struct thread_pool__job *curjob = NULL;
@@ -113,7 +113,7 @@ static int thread_pool__addthread(void) {
     return res;
 }
 
-int thread_pool_init(struct vm *vm) {
+int thread_pool__init(struct kvm *kvm) {
     unsigned long i;
     unsigned int thread_count = sysconf(_SC_NPROCESSORS_ONLN);
 
@@ -125,9 +125,9 @@ int thread_pool_init(struct vm *vm) {
 
     return i;
 }
-late_init(thread_pool_init);
+late_init(thread_pool__init);
 
-int thread_pool_exit(struct vm *vm) {
+int thread_pool__exit(struct kvm *kvm) {
     int i;
     void *NUL = NULL;
 
@@ -145,7 +145,7 @@ int thread_pool_exit(struct vm *vm) {
 
     return 0;
 }
-late_exit(thread_pool_exit);
+late_exit(thread_pool__exit);
 
 void thread_pool__do_job(struct thread_pool__job *job) {
     struct thread_pool__job *jobinfo = job;
@@ -164,7 +164,7 @@ void thread_pool__do_job(struct thread_pool__job *job) {
 }
 
 void thread_pool__cancel_job(struct thread_pool__job *job) {
-    bool is_running;
+    bool thread_running;
 
     /*
      * If the job is queued but not running, remove it. Otherwise, wait for
@@ -175,12 +175,12 @@ void thread_pool__cancel_job(struct thread_pool__job *job) {
     do {
         mutex_lock(&job_mutex);
         if (list_empty(&job->queue)) {
-            is_running = job->signalcount > 0;
+            thread_running = job->signalcount > 0;
         } else {
             list_del_init(&job->queue);
             job->signalcount = 0;
-            is_running = false;
+            thread_running = false;
         }
         mutex_unlock(&job_mutex);
-    } while (is_running);
+    } while (thread_running);
 }

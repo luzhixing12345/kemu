@@ -222,10 +222,10 @@ int virtio_pci__signal_vq(struct kvm *kvm, struct virtio_device *vdev, u32 vq) {
         if (vpci->signal_msi)
             virtio_pci__signal_msi(kvm, vpci, vpci->vq_vector[vq]);
         else
-            kvm_irq_trigger(kvm, vpci->gsis[vq]);
+            kvm__irq_trigger(kvm, vpci->gsis[vq]);
     } else {
         vpci->isr |= VIRTIO_PCI_ISR_QUEUE;
-        kvm_irq_line(kvm, vpci->legacy_irq_line, VIRTIO_IRQ_HIGH);
+        kvm__irq_line(kvm, vpci->legacy_irq_line, VIRTIO_IRQ_HIGH);
     }
     return 0;
 }
@@ -244,10 +244,10 @@ int virtio_pci__signal_config(struct kvm *kvm, struct virtio_device *vdev) {
         if (vpci->signal_msi)
             virtio_pci__signal_msi(kvm, vpci, tbl);
         else
-            kvm_irq_trigger(kvm, vpci->config_gsi);
+            kvm__irq_trigger(kvm, vpci->config_gsi);
     } else {
         vpci->isr |= VIRTIO_PCI_ISR_CONFIG;
-        kvm_irq_line(kvm, vpci->legacy_irq_line, VIRTIO_IRQ_HIGH);
+        kvm__irq_line(kvm, vpci->legacy_irq_line, VIRTIO_IRQ_HIGH);
     }
 
     return 0;
@@ -271,13 +271,13 @@ static int virtio_pci__bar_activate(struct kvm *kvm, struct pci_device_header *p
 
     switch (bar_num) {
         case 0:
-            r = kvm_register_pio(kvm, bar_addr, bar_size, mmio_fn, vdev);
+            r = kvm__register_pio(kvm, bar_addr, bar_size, mmio_fn, vdev);
             break;
         case 1:
-            r = kvm_register_mmio(kvm, bar_addr, bar_size, false, mmio_fn, vdev);
+            r = kvm__register_mmio(kvm, bar_addr, bar_size, false, mmio_fn, vdev);
             break;
         case 2:
-            r = kvm_register_mmio(kvm, bar_addr, bar_size, false, virtio_pci__msix_mmio_callback, vdev);
+            r = kvm__register_mmio(kvm, bar_addr, bar_size, false, virtio_pci__msix_mmio_callback, vdev);
             break;
     }
 
@@ -295,12 +295,12 @@ static int virtio_pci__bar_deactivate(struct kvm *kvm, struct pci_device_header 
 
     switch (bar_num) {
         case 0:
-            r = kvm_deregister_pio(kvm, bar_addr);
+            r = kvm__deregister_pio(kvm, bar_addr);
             break;
         case 1:
         case 2:
-            success = kvm_deregister_mmio(kvm, bar_addr);
-            /* kvm_deregister_mmio fails when the region is not found. */
+            success = kvm__deregister_mmio(kvm, bar_addr);
+            /* kvm__deregister_mmio fails when the region is not found. */
             r = (success ? 0 : -ENOENT);
             break;
     }
@@ -410,9 +410,9 @@ int virtio_pci__exit(struct kvm *kvm, struct virtio_device *vdev) {
     struct virtio_pci *vpci = vdev->virtio;
 
     virtio_pci__reset(kvm, vdev);
-    kvm_deregister_mmio(kvm, virtio_pci__mmio_addr(vpci));
-    kvm_deregister_mmio(kvm, virtio_pci__msix_io_addr(vpci));
-    kvm_deregister_pio(kvm, virtio_pci__port_addr(vpci));
+    kvm__deregister_mmio(kvm, virtio_pci__mmio_addr(vpci));
+    kvm__deregister_mmio(kvm, virtio_pci__msix_io_addr(vpci));
+    kvm__deregister_pio(kvm, virtio_pci__port_addr(vpci));
 
     return 0;
 }

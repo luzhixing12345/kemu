@@ -242,10 +242,8 @@ struct pci_device_header {
     for ((pos) = (hdr)->capabilities & ~3; (cap) = PCI_CAP(hdr, pos), (pos) != 0; \
          (pos) = ((struct pci_cap_hdr *)(cap))->next & ~3)
 
-struct vm;
-
-int pci_init(struct vm *vm);
-int pci_exit(struct vm *vm);
+int pci__init(struct kvm *kvm);
+int pci__exit(struct kvm *kvm);
 struct pci_device_header *pci__find_dev(u8 dev_num);
 u32 pci_get_mmio_block(u32 size);
 u16 pci_get_io_port_block(u32 size);

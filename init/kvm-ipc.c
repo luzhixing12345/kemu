@@ -1,19 +1,21 @@
 #include "kvm/kvm-ipc.h"
 
+#include <clib/clib.h>
 #include <dirent.h>
-#include <kvm/8250-serial.h>
-#include <kvm/builtin-debug.h>
-#include <kvm/epoll.h>
-#include <kvm/kvm-cpu.h>
-#include <kvm/kvm.h>
-#include <kvm/read-write.h>
-#include <kvm/rwsem.h>
-#include <kvm/strbuf.h>
-#include <kvm/util.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
+
+#include "kvm/8250-serial.h"
+#include "kvm/builtin-debug.h"
+#include "kvm/epoll.h"
+#include "kvm/kvm-cpu.h"
+#include "kvm/kvm.h"
+#include "kvm/read-write.h"
+#include "kvm/rwsem.h"
+#include "kvm/strbuf.h"
+#include "kvm/util.h"
 
 struct kvm_ipc_head {
     u32 type;
@@ -30,16 +32,16 @@ extern __thread struct kvm_cpu *current_kvm_cpu;
 static void (*msgs[KVM_IPC_MAX_MSGS])(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg);
 static DECLARE_RWSEM(msgs_rwlock);
 static int server_fd;
-static struct kvm_epoll epoll;
+static struct kvm__epoll epoll;
 
-static int kvm_create_socket(struct vm *vm) {
+static int kvm__create_socket(struct kvm *kvm) {
     int s;
     struct sockaddr_un local;
     int len, r;
     static char socket_path[PATH_MAX];
 
-    snprintf(socket_path, sizeof(socket_path), "%s/%s%s", vm->cfg.system.rootfs_path, KVM_SOCK_NAME, KVM_SOCK_SUFFIX);
-    vm->cfg.system.rootfs_socket_path = socket_path;
+    snprintf(socket_path, sizeof(socket_path), "%s/%s%s", kvm->cfg.rootfs_path, KVM_SOCK_NAME, KVM_SOCK_SUFFIX);
+    kvm->cfg.rootfs_socket_path = socket_path;
 
     /* This usually 108 bytes long */
     BUILD_BUG_ON(sizeof(local.sun_path) < 32);
@@ -52,6 +54,7 @@ static int kvm_create_socket(struct vm *vm) {
 
     local.sun_family = AF_UNIX;
     strlcpy(local.sun_path, socket_path, sizeof(local.sun_path));
+    DEBUG("Creating socket file \"%s\".", socket_path);
     len = strlen(local.sun_path) + sizeof(local.sun_family);
     r = bind(s, (struct sockaddr *)&local, len);
     /* Check for an existing socket file */
@@ -98,16 +101,19 @@ fail:
     return r;
 }
 
-void kvm_remove_socket(const char *name) {
-    unlink(name);
+void kvm__remove_socket(const char *name) {
+    char full_name[PATH_MAX];
+
+    snprintf(full_name, sizeof(full_name), "%s/%s%s", kvm__get_dir(), name, KVM_SOCK_SUFFIX);
+    unlink(full_name);
 }
 
-int kvm_get_sock_by_instance(const char *name) {
+int kvm__get_sock_by_instance(const char *name) {
     int s, len, r;
     char sock_file[PATH_MAX];
     struct sockaddr_un local;
 
-    snprintf(sock_file, sizeof(sock_file), "%s/%s%s", kvm_get_dir(), name, KVM_SOCK_SUFFIX);
+    snprintf(sock_file, sizeof(sock_file), "%s/%s%s", kvm__get_dir(), name, KVM_SOCK_SUFFIX);
     s = socket(AF_UNIX, SOCK_STREAM, 0);
 
     local.sun_family = AF_UNIX;
@@ -147,14 +153,14 @@ static bool is_socket(const char *base_path, const struct dirent *dent) {
     }
 }
 
-int kvm_enumerate_instances(int (*callback)(const char *name, int fd)) {
+int kvm__enumerate_instances(int (*callback)(const char *name, int fd)) {
     int sock;
     DIR *dir;
     struct dirent *entry;
     int ret = 0;
     const char *path;
 
-    path = kvm_get_dir();
+    path = kvm__get_dir();
 
     dir = opendir(path);
     if (!dir)
@@ -176,7 +182,7 @@ int kvm_enumerate_instances(int (*callback)(const char *name, int fd)) {
                 continue;
 
             *p = 0;
-            sock = kvm_get_sock_by_instance(entry->d_name);
+            sock = kvm__get_sock_by_instance(entry->d_name);
             if (sock < 0)
                 continue;
             ret = callback(entry->d_name, sock);
@@ -191,7 +197,7 @@ int kvm_enumerate_instances(int (*callback)(const char *name, int fd)) {
     return ret;
 }
 
-int kvm_ipc_register_handler(u32 type, void (*cb)(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg)) {
+int kvm_ipc__register_handler(u32 type, void (*cb)(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg)) {
     if (type >= KVM_IPC_MAX_MSGS)
         return -ENOSPC;
 
@@ -298,7 +304,7 @@ done:
     return -1;
 }
 
-static void kvm_ipc_handle_event(struct kvm *kvm, struct epoll_event *ev) {
+static void kvm_ipc__handle_event(struct kvm *kvm, struct epoll_event *ev) {
     int fd = ev->data.fd;
 
     if (fd == server_fd) {
@@ -319,7 +325,7 @@ static void kvm_ipc_handle_event(struct kvm *kvm, struct epoll_event *ev) {
     }
 }
 
-static void kvm_pid(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
+static void kvm__pid(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
     pid_t pid = getpid();
     int r = 0;
 
@@ -334,7 +340,7 @@ static void handle_stop(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
     if (WARN_ON(type != KVM_IPC_STOP || len))
         return;
 
-    kvm_reboot(kvm);
+    kvm__reboot(kvm);
 }
 
 /* Pause/resume the guest using SIGUSR2 */
@@ -346,11 +352,11 @@ static void handle_pause(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
 
     if (type == KVM_IPC_RESUME && is_paused) {
         kvm->vm_state = KVM_VMSTATE_RUNNING;
-        kvm_continue(kvm);
+        kvm__continue(kvm);
     } else if (type == KVM_IPC_PAUSE && !is_paused) {
         kvm->vm_state = KVM_VMSTATE_PAUSED;
         ioctl(kvm->vm_fd, KVM_KVMCLOCK_CTRL);
-        kvm_pause(kvm);
+        kvm__pause(kvm);
     } else {
         return;
     }
@@ -382,9 +388,9 @@ static void handle_sigusr1(int sig) {
         return;
 
     dprintf(fd, "\n #\n # vCPU #%ld's dump:\n #\n", cpu->cpu_id);
-    kvm_cpu_show_registers(cpu);
-    kvm_cpu_show_code(cpu);
-    kvm_cpu_show_page_tables(cpu);
+    kvm_cpu__show_registers(cpu);
+    kvm_cpu__show_code(cpu);
+    kvm_cpu__show_page_tables(cpu);
     fflush(stdout);
     printout_done = 1;
 }
@@ -424,7 +430,7 @@ static void handle_debug(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
 
         printout_done = 0;
 
-        kvm_cpu_set_debug_fd(fd);
+        kvm_cpu__set_debug_fd(fd);
         pthread_kill(cpu->thread, SIGUSR1);
         /*
          * Wait for the vCPU to dump state before signalling
@@ -439,15 +445,14 @@ static void handle_debug(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
     serial8250__inject_sysrq(kvm, 'p');
 }
 
-int kvm_ipc_init(struct vm *vm) {
+int kvm_ipc__init(struct kvm *kvm) {
     int ret;
-    struct kvm *kvm = &vm->kvm;
-    int sock = kvm_create_socket(vm);
+    int sock = kvm__create_socket(kvm);
     struct epoll_event ev = {0};
 
     server_fd = sock;
 
-    ret = epoll_init(kvm, &epoll, "kvm-ipc", kvm_ipc_handle_event);
+    ret = epoll__init(kvm, &epoll, "kvm-ipc", kvm_ipc__handle_event);
     if (ret) {
         pr_err("Failed starting IPC thread");
         goto err;
@@ -456,35 +461,35 @@ int kvm_ipc_init(struct vm *vm) {
     ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = sock;
     if (epoll_ctl(epoll.fd, EPOLL_CTL_ADD, sock, &ev) < 0) {
-        ERR("Failed adding socket to epoll\n");
+        pr_err("Failed adding socket to epoll");
         ret = -EFAULT;
         goto err_epoll;
     }
 
-    kvm_ipc_register_handler(KVM_IPC_PID, kvm_pid);
-    kvm_ipc_register_handler(KVM_IPC_DEBUG, handle_debug);
-    kvm_ipc_register_handler(KVM_IPC_PAUSE, handle_pause);
-    kvm_ipc_register_handler(KVM_IPC_RESUME, handle_pause);
-    kvm_ipc_register_handler(KVM_IPC_STOP, handle_stop);
-    kvm_ipc_register_handler(KVM_IPC_VMSTATE, handle_vmstate);
+    kvm_ipc__register_handler(KVM_IPC_PID, kvm__pid);
+    kvm_ipc__register_handler(KVM_IPC_DEBUG, handle_debug);
+    kvm_ipc__register_handler(KVM_IPC_PAUSE, handle_pause);
+    kvm_ipc__register_handler(KVM_IPC_RESUME, handle_pause);
+    kvm_ipc__register_handler(KVM_IPC_STOP, handle_stop);
+    kvm_ipc__register_handler(KVM_IPC_VMSTATE, handle_vmstate);
     signal(SIGUSR1, handle_sigusr1);
 
     return 0;
 
 err_epoll:
-    epoll_exit(&epoll);
+    epoll__exit(&epoll);
     close(server_fd);
 err:
     return ret;
 }
-base_init(kvm_ipc_init);
+base_init(kvm_ipc__init);
 
-int kvm_ipc_exit(struct vm *vm) {
-    epoll_exit(&epoll);
+int kvm_ipc__exit(struct kvm *kvm) {
+    epoll__exit(&epoll);
     close(server_fd);
 
-    kvm_remove_socket(vm->cfg.system.rootfs_socket_path);
+    kvm__remove_socket(kvm->cfg.guest_name);
 
     return 0;
 }
-base_exit(kvm_ipc_exit);
+base_exit(kvm_ipc__exit);

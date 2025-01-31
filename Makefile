@@ -25,7 +25,7 @@ ARCH ?= $(shell uname -m | sed -e s/i.86/i386/ -e s/ppc.*/powerpc/ \
 CROSS_COMPILE 	:=
 CC          	:= gcc
 TARGET      	:= kemu
-SRC_PATH    	:= init include/clib virtio disk net
+SRC_PATH    	:= init virtio disk net util vfio include/clib
 SRC_EXT     	:= c
 THIRD_LIB   	:=
 INCLUDE_PATH 	:= include arch/$(ARCH)/include
@@ -47,6 +47,10 @@ LIBS		+= -lrt
 DEFINES     = 
 DEFINES		+= -D_FILE_OFFSET_BITS=64
 DEFINES		+= -D_GNU_SOURCE
+DEFINES	+= -DKVMTOOLS_VERSION='"$(KVMTOOLS_VERSION)"'
+DEFINES	+= -DBUILD_ARCH='"$(ARCH)"'
+
+
 # ------------------------- #
 
 ifneq ($(strip $(INCLUDE_PATH)),)
@@ -186,11 +190,14 @@ clean:
 	$(Q) rm -f arch/x86_64/bios/*.o
 	$(Q) rm -f arch/x86_64/bios/bios-rom.h
 	$(Q) rm -f $(PROGRAM)
-release:
-	$(MAKE) -j4
-	mkdir $(RELEASE)
-	@cp $(EXE) $(RELEASE)/ 
-	tar -cvf $(TARGET).tar $(RELEASE)/
+# 输出配置信息, 包括 CFLAGS, LDFLAGS, LIBS
+config:
+	$(E) "CONFIG"
+	$(E) "  [SRC FILES]: $(shell echo $(SRC) | tr '\n' ' ')"
+	$(E) "  [CFLAGS]: $(CFLAGS)"
+	$(E) "  [LDFLAGS]: $(LDFLAGS)"
+	$(E) "  [LIBS]: $(LIBS)"
+.PHONY: config
 
 help:
 	$(E) ""

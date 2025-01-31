@@ -1,9 +1,9 @@
 #ifndef KVM_MPTABLE_H_
 #define KVM_MPTABLE_H_
 
-#include <vm/vm.h>
+struct kvm;
 
-int mptable_init(struct vm *vm);
-int mptable_exit(struct vm *vm);
+int mptable__init(struct kvm *kvm);
+int mptable__exit(struct kvm *kvm);
 
 #endif /* KVM_MPTABLE_H_ */

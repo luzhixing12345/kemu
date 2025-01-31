@@ -69,7 +69,6 @@ int path_exist(const char *path) {
     return access(path, F_OK) == 0;
 }
 
-
 bool is_mounted(struct stat *st) {
     struct stat st_buf;
     struct mntent *mnt;

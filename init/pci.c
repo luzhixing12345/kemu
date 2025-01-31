@@ -456,37 +456,35 @@ int pci__register_bar_regions(struct kvm *kvm, struct pci_device_header *pci_hdr
     return 0;
 }
 
-int pci_init(struct vm *vm) {
+int pci__init(struct kvm *kvm) {
     int r;
-    struct kvm *kvm = &vm->kvm;
 
-    r = kvm_register_pio(kvm, PCI_CONFIG_DATA, 4, pci_config_data_mmio, NULL);
+    r = kvm__register_pio(kvm, PCI_CONFIG_DATA, 4, pci_config_data_mmio, NULL);
     if (r < 0)
         return r;
-    r = kvm_register_pio(kvm, PCI_CONFIG_ADDRESS, 4, pci_config_address_mmio, NULL);
+    r = kvm__register_pio(kvm, PCI_CONFIG_ADDRESS, 4, pci_config_address_mmio, NULL);
     if (r < 0)
         goto err_unregister_data;
 
-    r = kvm_register_mmio(kvm, KVM_PCI_CFG_AREA, PCI_CFG_SIZE, false, pci_config_mmio_access, kvm);
+    r = kvm__register_mmio(kvm, KVM_PCI_CFG_AREA, PCI_CFG_SIZE, false, pci_config_mmio_access, kvm);
     if (r < 0)
         goto err_unregister_addr;
 
     return 0;
 
 err_unregister_addr:
-    kvm_deregister_pio(kvm, PCI_CONFIG_ADDRESS);
+    kvm__deregister_pio(kvm, PCI_CONFIG_ADDRESS);
 err_unregister_data:
-    kvm_deregister_pio(kvm, PCI_CONFIG_DATA);
+    kvm__deregister_pio(kvm, PCI_CONFIG_DATA);
     return r;
 }
-dev_base_init(pci_init);
+dev_base_init(pci__init);
 
-int pci_exit(struct vm *vm) {
-    struct kvm *kvm = &vm->kvm;
-    kvm_deregister_pio(kvm, PCI_CONFIG_DATA);
-    kvm_deregister_pio(kvm, PCI_CONFIG_ADDRESS);
-    kvm_deregister_mmio(kvm, KVM_PCI_CFG_AREA);
+int pci__exit(struct kvm *kvm) {
+    kvm__deregister_pio(kvm, PCI_CONFIG_DATA);
+    kvm__deregister_pio(kvm, PCI_CONFIG_ADDRESS);
+    kvm__deregister_mmio(kvm, KVM_PCI_CFG_AREA);
 
     return 0;
 }
-dev_base_exit(pci_exit);
+dev_base_exit(pci__exit);
