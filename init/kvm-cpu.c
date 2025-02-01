@@ -18,6 +18,36 @@
 
 extern __thread struct kvm_cpu *current_kvm_cpu;
 
+void *kvm_cpu_thread(void *arg) {
+    char name[16];
+
+    current_kvm_cpu = arg;
+
+    sprintf(name, "kvm-vcpu-%lu", current_kvm_cpu->cpu_id);
+    kvm_set_thread_name(name);
+
+    if (kvm_cpu__start(current_kvm_cpu))
+        goto panic_kvm;
+
+    return (void *)(intptr_t)0;
+
+panic_kvm:
+    pr_err("KVM exit reason: %u (\"%s\")",
+           current_kvm_cpu->kvm_run->exit_reason,
+           kvm_exit_reasons[current_kvm_cpu->kvm_run->exit_reason]);
+
+    if (current_kvm_cpu->kvm_run->exit_reason == KVM_EXIT_UNKNOWN) {
+        pr_err("KVM exit code: %llu", (unsigned long long)current_kvm_cpu->kvm_run->hw.hardware_exit_reason);
+    }
+
+    kvm_cpu__set_debug_fd(STDOUT_FILENO);
+    kvm_cpu__show_registers(current_kvm_cpu);
+    kvm_cpu__show_code(current_kvm_cpu);
+    kvm_cpu__show_page_tables(current_kvm_cpu);
+
+    return (void *)(intptr_t)1;
+}
+
 int __attribute__((weak)) kvm_cpu__get_endianness(struct kvm_cpu *vcpu) {
     return VIRTIO_ENDIAN_HOST;
 }

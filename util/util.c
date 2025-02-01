@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <sys/statfs.h>
 
+int loglevel = LOGLEVEL_INFO;
+
 static void report(const char *prefix, const char *err, va_list params) {
     char msg[1024];
     vsnprintf(msg, sizeof(msg), err, params);

@@ -453,8 +453,8 @@ int kvm_init(struct kvm *kvm) {
     kvm_init_ram(kvm);
 
     if (!kvm->cfg.firmware_filename) {
-        if (!kvm_load_kernel(kvm, kvm->cfg.kernel_filename, kvm->cfg.initrd_filename, kvm->cfg.real_cmdline))
-            die("unable to load kernel %s", kvm->cfg.kernel_filename);
+        if (!kvm_load_kernel(kvm, kvm->cfg.kernel_path, kvm->cfg.initrd_filename, kvm->cfg.real_cmdline))
+            die("unable to load kernel %s", kvm->cfg.kernel_path);
     }
 
     if (kvm->cfg.firmware_filename) {

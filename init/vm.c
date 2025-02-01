@@ -11,8 +11,10 @@
 #include "clib/log.h"
 #include "memory.h"
 
+__thread struct kvm_cpu *current_kvm_cpu;
+
 int vm_validate_cfg(struct kvm_config *config) {
-    if (!config->kernel_filename) {
+    if (!config->kernel_path) {
         ERR("kernel path is not set\n");
         return -EINVAL;
     }

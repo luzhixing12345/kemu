@@ -15,16 +15,14 @@
 #define NETWORK_OPTION "\n\n[network options]"
 #define DEBUG_OPTION   "\n\n[debug options]"
 
-// int loglevel = LOGLEVEL_DEBUG;
-
 int main(int argc, const char **argv) {
     struct kvm kemu_vm;
     memset(&kemu_vm, 0, sizeof(struct kvm));
     argparse_option options[] = {
         // basic system boot options
         ARG_STR(&kemu_vm.cfg.guest_name, NULL, "--name", "guest vm name", " <name>", "name"),
-        ARG_STR(&kemu_vm.cfg.kernel_filename, NULL, "--kernel", "kernel binary path", " <bzImage>", "kernel"),
-        ARG_STR(&kemu_vm.cfg.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", "kernel-cmdline"),
+        ARG_STR(&kemu_vm.cfg.kernel_path, NULL, "--kernel", "kernel binary path", " <bzImage>", "kernel"),
+        ARG_STR(&kemu_vm.cfg.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", NULL),
         ARG_STR(&kemu_vm.cfg.ram_size, "-m", NULL, "memory size", " <memory-size>", "memory"),
         ARG_INT(&kemu_vm.cfg.nrcpus, NULL, "--smp", "cpu number", " <cpus>", "cpu"),
         // storage options
