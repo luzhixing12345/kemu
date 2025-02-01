@@ -1420,7 +1420,7 @@ int virtio_9p_img_name_parser(const struct option *opt, const char *arg, int uns
         return 0;
     }
 
-    snprintf(path, PATH_MAX, "%s%s", kvm__get_dir(), arg);
+    snprintf(path, PATH_MAX, "%s%s", kvm_get_dir(), arg);
 
     if (stat(path, &st) == 0 && S_ISDIR(st.st_mode)) {
         char tmp[PATH_MAX];

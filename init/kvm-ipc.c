@@ -32,9 +32,9 @@ extern __thread struct kvm_cpu *current_kvm_cpu;
 static void (*msgs[KVM_IPC_MAX_MSGS])(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg);
 static DECLARE_RWSEM(msgs_rwlock);
 static int server_fd;
-static struct kvm__epoll epoll;
+static struct kvm_epoll epoll;
 
-static int kvm__create_socket(struct kvm *kvm) {
+static int kvm_create_socket(struct kvm *kvm) {
     int s;
     struct sockaddr_un local;
     int len, r;
@@ -101,19 +101,19 @@ fail:
     return r;
 }
 
-void kvm__remove_socket(const char *name) {
+void kvm_remove_socket(const char *name) {
     char full_name[PATH_MAX];
 
-    snprintf(full_name, sizeof(full_name), "%s/%s%s", kvm__get_dir(), name, KVM_SOCK_SUFFIX);
+    snprintf(full_name, sizeof(full_name), "%s/%s%s", kvm_get_dir(), name, KVM_SOCK_SUFFIX);
     unlink(full_name);
 }
 
-int kvm__get_sock_by_instance(const char *name) {
+int kvm_get_sock_by_instance(const char *name) {
     int s, len, r;
     char sock_file[PATH_MAX];
     struct sockaddr_un local;
 
-    snprintf(sock_file, sizeof(sock_file), "%s/%s%s", kvm__get_dir(), name, KVM_SOCK_SUFFIX);
+    snprintf(sock_file, sizeof(sock_file), "%s/%s%s", kvm_get_dir(), name, KVM_SOCK_SUFFIX);
     s = socket(AF_UNIX, SOCK_STREAM, 0);
 
     local.sun_family = AF_UNIX;
@@ -153,14 +153,14 @@ static bool is_socket(const char *base_path, const struct dirent *dent) {
     }
 }
 
-int kvm__enumerate_instances(int (*callback)(const char *name, int fd)) {
+int kvm_enumerate_instances(int (*callback)(const char *name, int fd)) {
     int sock;
     DIR *dir;
     struct dirent *entry;
     int ret = 0;
     const char *path;
 
-    path = kvm__get_dir();
+    path = kvm_get_dir();
 
     dir = opendir(path);
     if (!dir)
@@ -182,7 +182,7 @@ int kvm__enumerate_instances(int (*callback)(const char *name, int fd)) {
                 continue;
 
             *p = 0;
-            sock = kvm__get_sock_by_instance(entry->d_name);
+            sock = kvm_get_sock_by_instance(entry->d_name);
             if (sock < 0)
                 continue;
             ret = callback(entry->d_name, sock);
@@ -325,7 +325,7 @@ static void kvm_ipc__handle_event(struct kvm *kvm, struct epoll_event *ev) {
     }
 }
 
-static void kvm__pid(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
+static void kvm_pid(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
     pid_t pid = getpid();
     int r = 0;
 
@@ -340,7 +340,7 @@ static void handle_stop(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
     if (WARN_ON(type != KVM_IPC_STOP || len))
         return;
 
-    kvm__reboot(kvm);
+    kvm_reboot(kvm);
 }
 
 /* Pause/resume the guest using SIGUSR2 */
@@ -352,11 +352,11 @@ static void handle_pause(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
 
     if (type == KVM_IPC_RESUME && is_paused) {
         kvm->vm_state = KVM_VMSTATE_RUNNING;
-        kvm__continue(kvm);
+        kvm_continue(kvm);
     } else if (type == KVM_IPC_PAUSE && !is_paused) {
         kvm->vm_state = KVM_VMSTATE_PAUSED;
         ioctl(kvm->vm_fd, KVM_KVMCLOCK_CTRL);
-        kvm__pause(kvm);
+        kvm_pause(kvm);
     } else {
         return;
     }
@@ -447,7 +447,7 @@ static void handle_debug(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
 
 int kvm_ipc__init(struct kvm *kvm) {
     int ret;
-    int sock = kvm__create_socket(kvm);
+    int sock = kvm_create_socket(kvm);
     struct epoll_event ev = {0};
 
     server_fd = sock;
@@ -466,7 +466,7 @@ int kvm_ipc__init(struct kvm *kvm) {
         goto err_epoll;
     }
 
-    kvm_ipc__register_handler(KVM_IPC_PID, kvm__pid);
+    kvm_ipc__register_handler(KVM_IPC_PID, kvm_pid);
     kvm_ipc__register_handler(KVM_IPC_DEBUG, handle_debug);
     kvm_ipc__register_handler(KVM_IPC_PAUSE, handle_pause);
     kvm_ipc__register_handler(KVM_IPC_RESUME, handle_pause);
@@ -488,7 +488,7 @@ int kvm_ipc__exit(struct kvm *kvm) {
     epoll__exit(&epoll);
     close(server_fd);
 
-    kvm__remove_socket(kvm->cfg.guest_name);
+    kvm_remove_socket(kvm->cfg.guest_name);
 
     return 0;
 }

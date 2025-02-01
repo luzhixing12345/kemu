@@ -311,14 +311,14 @@ void kvm_cpu__show_code(struct kvm_cpu *vcpu) {
     if (ioctl(vcpu->vcpu_fd, KVM_GET_ONE_REG, &reg) < 0)
         die("KVM_GET_ONE_REG failed (show_code @ PC)");
 
-    kvm__dump_mem(vcpu->kvm, data, 32, debug_fd);
+    kvm_dump_mem(vcpu->kvm, data, 32, debug_fd);
 
     dprintf(debug_fd, "\n*RA:\n");
     reg.id = RISCV_CORE_REG(regs.ra);
     if (ioctl(vcpu->vcpu_fd, KVM_GET_ONE_REG, &reg) < 0)
         die("KVM_GET_ONE_REG failed (show_code @ RA)");
 
-    kvm__dump_mem(vcpu->kvm, data, 32, debug_fd);
+    kvm_dump_mem(vcpu->kvm, data, 32, debug_fd);
 }
 
 static void kvm_cpu__show_csrs(struct kvm_cpu *vcpu) {

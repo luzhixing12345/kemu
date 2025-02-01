@@ -128,26 +128,26 @@ static void reset_vcpu_aarch64(struct kvm_cpu *vcpu) {
 
 void kvm_cpu__select_features(struct kvm *kvm, struct kvm_vcpu_init *init) {
     if (kvm->cfg.arch.aarch32_guest) {
-        if (!kvm__supports_extension(kvm, KVM_CAP_ARM_EL1_32BIT))
+        if (!kvm_supports_extension(kvm, KVM_CAP_ARM_EL1_32BIT))
             die("32bit guests are not supported\n");
         init->features[0] |= 1UL << KVM_ARM_VCPU_EL1_32BIT;
     }
 
     if (kvm->cfg.arch.has_pmuv3) {
-        if (!kvm__supports_extension(kvm, KVM_CAP_ARM_PMU_V3))
+        if (!kvm_supports_extension(kvm, KVM_CAP_ARM_PMU_V3))
             die("PMUv3 is not supported");
         init->features[0] |= 1UL << KVM_ARM_VCPU_PMU_V3;
     }
 
     /* Enable pointer authentication if available */
-    if (kvm__supports_extension(kvm, KVM_CAP_ARM_PTRAUTH_ADDRESS) &&
-        kvm__supports_extension(kvm, KVM_CAP_ARM_PTRAUTH_GENERIC)) {
+    if (kvm_supports_extension(kvm, KVM_CAP_ARM_PTRAUTH_ADDRESS) &&
+        kvm_supports_extension(kvm, KVM_CAP_ARM_PTRAUTH_GENERIC)) {
         init->features[0] |= 1UL << KVM_ARM_VCPU_PTRAUTH_ADDRESS;
         init->features[0] |= 1UL << KVM_ARM_VCPU_PTRAUTH_GENERIC;
     }
 
     /* Enable SVE if available */
-    if (kvm__supports_extension(kvm, KVM_CAP_ARM_SVE))
+    if (kvm_supports_extension(kvm, KVM_CAP_ARM_SVE))
         init->features[0] |= 1UL << KVM_ARM_VCPU_SVE;
 }
 
@@ -205,7 +205,7 @@ static int vcpu_configure_sve(struct kvm_cpu *vcpu) {
 }
 
 int kvm_cpu__configure_features(struct kvm_cpu *vcpu) {
-    if (kvm__supports_extension(vcpu->kvm, KVM_CAP_ARM_SVE))
+    if (kvm_supports_extension(vcpu->kvm, KVM_CAP_ARM_SVE))
         return vcpu_configure_sve(vcpu);
 
     return 0;
@@ -278,14 +278,14 @@ void kvm_cpu__show_code(struct kvm_cpu *vcpu) {
     if (ioctl(vcpu->vcpu_fd, KVM_GET_ONE_REG, &reg) < 0)
         die("KVM_GET_ONE_REG failed (show_code @ PC)");
 
-    kvm__dump_mem(vcpu->kvm, data, 32, debug_fd);
+    kvm_dump_mem(vcpu->kvm, data, 32, debug_fd);
 
     dprintf(debug_fd, "\n*lr:\n");
     reg.id = ARM64_CORE_REG(regs.regs[30]);
     if (ioctl(vcpu->vcpu_fd, KVM_GET_ONE_REG, &reg) < 0)
         die("KVM_GET_ONE_REG failed (show_code @ LR)");
 
-    kvm__dump_mem(vcpu->kvm, data, 32, debug_fd);
+    kvm_dump_mem(vcpu->kvm, data, 32, debug_fd);
 }
 
 void kvm_cpu__show_registers(struct kvm_cpu *vcpu) {

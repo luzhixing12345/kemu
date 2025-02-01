@@ -456,7 +456,7 @@ static int xics_init(struct kvm *kvm) {
 }
 dev_base_init(xics_init);
 
-void kvm__irq_line(struct kvm *kvm, int irq, int level) {
+void kvm_irq_line(struct kvm *kvm, int irq, int level) {
     /*
      * Route event to ICS, which routes to ICP, which eventually does a
      * kvm_cpu__irq(vcpu, POWER7_EXT_IRQ, 1)

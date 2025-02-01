@@ -111,12 +111,12 @@ int kvm_cmd_stat(int argc, const char **argv, const char *prefix) {
         usage_with_options(stat_usage, stat_options);
 
     if (mem && all)
-        return kvm__enumerate_instances(do_memstat);
+        return kvm_enumerate_instances(do_memstat);
 
     if (instance_name == NULL)
         kvm_stat_help();
 
-    instance = kvm__get_sock_by_instance(instance_name);
+    instance = kvm_get_sock_by_instance(instance_name);
 
     if (instance <= 0)
         die("Failed locating instance");

@@ -517,7 +517,7 @@ static int plic__init(struct kvm *kvm) {
 
     mutex_init(&plic.irq_lock);
 
-    ret = kvm__register_mmio(kvm, RISCV_IRQCHIP, RISCV_IRQCHIP_SIZE, false, plic__mmio_callback, &plic);
+    ret = kvm_register_mmio(kvm, RISCV_IRQCHIP, RISCV_IRQCHIP_SIZE, false, plic__mmio_callback, &plic);
     if (ret)
         return ret;
 
@@ -535,7 +535,7 @@ static int plic__exit(struct kvm *kvm) {
         return 0;
 
     plic.ready = false;
-    kvm__deregister_mmio(kvm, RISCV_IRQCHIP);
+    kvm_deregister_mmio(kvm, RISCV_IRQCHIP);
     free(plic.contexts);
 
     return 0;

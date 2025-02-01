@@ -48,7 +48,7 @@ int kvm_cmd_balloon(int argc, const char **argv, const char *prefix) {
     if (instance_name == NULL)
         kvm_balloon_help();
 
-    instance = kvm__get_sock_by_instance(instance_name);
+    instance = kvm_get_sock_by_instance(instance_name);
 
     if (instance <= 0)
         die("Failed locating instance");

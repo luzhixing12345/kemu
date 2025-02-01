@@ -111,7 +111,7 @@ static void setup_mmu_info(struct kvm *kvm, struct cpu_info *cpu_info) {
     struct kvm_ppc_one_seg_page_size *sps;
     int i, j, k, valid;
 
-    if (!kvm__supports_extension(kvm, KVM_CAP_PPC_GET_SMMU_INFO)) {
+    if (!kvm_supports_extension(kvm, KVM_CAP_PPC_GET_SMMU_INFO)) {
         memcpy(&cpu_info->mmu_info.sps, fallback_sps, sizeof(fallback_sps));
     } else if (ioctl(kvm->vm_fd, KVM_PPC_GET_SMMU_INFO, &cpu_info->mmu_info) < 0) {
         die_perror("KVM_PPC_GET_SMMU_INFO failed");

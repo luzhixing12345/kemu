@@ -17,7 +17,7 @@ static int pvtime__alloc_region(struct kvm *kvm) {
     if (mem == MAP_FAILED)
         return -errno;
 
-    ret = kvm__register_ram(kvm, ARM_PVTIME_BASE, ARM_PVTIME_SIZE, mem);
+    ret = kvm_register_ram(kvm, ARM_PVTIME_BASE, ARM_PVTIME_SIZE, mem);
     if (ret) {
         munmap(mem, ARM_PVTIME_SIZE);
         return ret;
@@ -31,7 +31,7 @@ static int pvtime__teardown_region(struct kvm *kvm) {
     if (usr_mem == NULL)
         return 0;
 
-    kvm__destroy_mem(kvm, ARM_PVTIME_BASE, ARM_PVTIME_SIZE, usr_mem);
+    kvm_destroy_mem(kvm, ARM_PVTIME_BASE, ARM_PVTIME_SIZE, usr_mem);
     munmap(usr_mem, ARM_PVTIME_SIZE);
     usr_mem = NULL;
     return 0;
@@ -49,7 +49,7 @@ int kvm_cpu__setup_pvtime(struct kvm_cpu *vcpu) {
     if (kvm_cfg->no_pvtime)
         return 0;
 
-    has_stolen_time = kvm__supports_extension(vcpu->kvm, KVM_CAP_STEAL_TIME);
+    has_stolen_time = kvm_supports_extension(vcpu->kvm, KVM_CAP_STEAL_TIME);
     if (!has_stolen_time) {
         kvm_cfg->no_pvtime = true;
         return 0;

@@ -59,12 +59,12 @@ int kvm_cmd_resume(int argc, const char **argv, const char *prefix) {
     parse_resume_options(argc, argv);
 
     if (all)
-        return kvm__enumerate_instances(do_resume);
+        return kvm_enumerate_instances(do_resume);
 
     if (instance_name == NULL)
         kvm_resume_help();
 
-    instance = kvm__get_sock_by_instance(instance_name);
+    instance = kvm_get_sock_by_instance(instance_name);
 
     if (instance <= 0)
         die("Failed locating instance");

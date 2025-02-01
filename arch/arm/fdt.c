@@ -176,7 +176,7 @@ static int setup_fdt(struct kvm *kvm) {
 
     /* PSCI firmware */
     _FDT(fdt_begin_node(fdt, "psci"));
-    if (kvm__supports_extension(kvm, KVM_CAP_ARM_PSCI_0_2)) {
+    if (kvm_supports_extension(kvm, KVM_CAP_ARM_PSCI_0_2)) {
         const char compatible[] = "arm,psci-0.2\0arm,psci";
         _FDT(fdt_property(fdt, "compatible", compatible, sizeof(compatible)));
         if (kvm->cfg.arch.aarch32_guest)

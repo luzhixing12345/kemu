@@ -67,7 +67,7 @@ int virtio_mmio_signal_vq(struct kvm *kvm, struct virtio_device *vdev, u32 vq) {
     struct virtio_mmio *vmmio = vdev->virtio;
 
     vmmio->hdr.interrupt_state |= VIRTIO_MMIO_INT_VRING;
-    kvm__irq_trigger(vmmio->kvm, vmmio->irq);
+    kvm_irq_trigger(vmmio->kvm, vmmio->irq);
 
     return 0;
 }
@@ -95,7 +95,7 @@ int virtio_mmio_signal_config(struct kvm *kvm, struct virtio_device *vdev) {
     struct virtio_mmio *vmmio = vdev->virtio;
 
     vmmio->hdr.interrupt_state |= VIRTIO_MMIO_INT_CONFIG;
-    kvm__irq_trigger(vmmio->kvm, vmmio->irq);
+    kvm_irq_trigger(vmmio->kvm, vmmio->irq);
 
     return 0;
 }
@@ -140,12 +140,12 @@ int virtio_mmio_init(struct kvm *kvm, void *dev, struct virtio_device *vdev, int
     if (!legacy)
         vdev->endian = VIRTIO_ENDIAN_LE;
 
-    r = kvm__register_mmio(kvm,
-                           vmmio->addr,
-                           VIRTIO_MMIO_IO_SIZE,
-                           false,
-                           legacy ? virtio_mmio_legacy_callback : virtio_mmio_modern_callback,
-                           vdev);
+    r = kvm_register_mmio(kvm,
+                          vmmio->addr,
+                          VIRTIO_MMIO_IO_SIZE,
+                          false,
+                          legacy ? virtio_mmio_legacy_callback : virtio_mmio_modern_callback,
+                          vdev);
     if (r < 0)
         return r;
 
@@ -166,7 +166,7 @@ int virtio_mmio_init(struct kvm *kvm, void *dev, struct virtio_device *vdev, int
 
     r = device__register(&vmmio->dev_hdr);
     if (r < 0) {
-        kvm__deregister_mmio(kvm, vmmio->addr);
+        kvm_deregister_mmio(kvm, vmmio->addr);
         return r;
     }
 
@@ -194,7 +194,7 @@ int virtio_mmio_exit(struct kvm *kvm, struct virtio_device *vdev) {
     struct virtio_mmio *vmmio = vdev->virtio;
 
     virtio_mmio_reset(kvm, vdev);
-    kvm__deregister_mmio(kvm, vmmio->addr);
+    kvm_deregister_mmio(kvm, vmmio->addr);
 
     return 0;
 }

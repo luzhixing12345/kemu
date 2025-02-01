@@ -77,14 +77,14 @@ static int print_guest(const char *name, int sock) {
 }
 
 static int kvm_list_running_instances(void) {
-    return kvm__enumerate_instances(print_guest);
+    return kvm_enumerate_instances(print_guest);
 }
 
 static int kvm_list_rootfs(void) {
     DIR *dir;
     struct dirent *dirent;
 
-    dir = opendir(kvm__get_dir());
+    dir = opendir(kvm_get_dir());
     if (dir == NULL)
         return -1;
 

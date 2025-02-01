@@ -91,7 +91,7 @@ static void *virtio_net_rx_thread(void *p) {
     u16 head;
     int len, copied;
 
-    kvm__set_thread_name("virtio-net-rx");
+    kvm_set_thread_name("virtio-net-rx");
 
     kvm = ndev->kvm;
     while (1) {
@@ -161,7 +161,7 @@ static void *virtio_net_tx_thread(void *p) {
     u16 head;
     int len;
 
-    kvm__set_thread_name("virtio-net-tx");
+    kvm_set_thread_name("virtio-net-tx");
 
     kvm = ndev->kvm;
 
@@ -208,7 +208,7 @@ static void *virtio_net_ctrl_thread(void *p) {
     virtio_net_ctrl_ack ack;
     size_t len;
 
-    kvm__set_thread_name("virtio-net-ctrl");
+    kvm_set_thread_name("virtio-net-ctrl");
 
     while (1) {
         mutex_lock(&queue->lock);

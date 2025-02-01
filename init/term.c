@@ -37,7 +37,7 @@ int term_getc(struct kvm *kvm, int term) {
     if (term_got_escape) {
         term_got_escape = false;
         if (c == 'x')
-            kvm__reboot(kvm);
+            kvm_reboot(kvm);
         if (c == term_escape_char)
             return c;
     }
@@ -99,7 +99,7 @@ static void *term_poll_thread_loop(void *param) {
     struct kvm *kvm = (struct kvm *)param;
     int i;
 
-    kvm__set_thread_name("term-poll");
+    kvm_set_thread_name("term-poll");
 
     for (i = 0; i < TERM_MAX_DEVS; i++) {
         fds[i].fd = term_fds[i][TERM_FD_IN];
@@ -111,7 +111,7 @@ static void *term_poll_thread_loop(void *param) {
         /* Poll with infinite timeout */
         if (poll(fds, TERM_MAX_DEVS, -1) < 1)
             break;
-        kvm__arch_read_term(kvm);
+        kvm_arch_read_term(kvm);
     }
 
     die("term_poll_thread_loop: error polling device fds %d\n", errno);

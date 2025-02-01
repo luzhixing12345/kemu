@@ -18,7 +18,7 @@
 
 static LIST_HEAD(used_ioevents);
 static bool ioeventfd_avail;
-static struct kvm__epoll epoll;
+static struct kvm_epoll epoll;
 
 static void ioeventfd__handle_event(struct kvm *kvm, struct epoll_event *ev) {
     u64 tmp;
@@ -31,7 +31,7 @@ static void ioeventfd__handle_event(struct kvm *kvm, struct epoll_event *ev) {
 }
 
 int ioeventfd__init(struct kvm *kvm) {
-    ioeventfd_avail = kvm__supports_extension(kvm, KVM_CAP_IOEVENTFD);
+    ioeventfd_avail = kvm_supports_extension(kvm, KVM_CAP_IOEVENTFD);
     if (!ioeventfd_avail)
         return 1; /* Not fatal, but let caller determine no-go. */
 

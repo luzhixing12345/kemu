@@ -255,7 +255,7 @@ void kvm_cpu__show_code(struct kvm_cpu *vcpu) {
     dprintf(debug_fd, "\n Stack:\n");
     dprintf(debug_fd, " ------\n");
     /* Only works in real mode: */
-    kvm__dump_mem(vcpu->kvm, vcpu->regs.gpr[1], 32, debug_fd);
+    kvm_dump_mem(vcpu->kvm, vcpu->regs.gpr[1], 32, debug_fd);
 }
 
 void kvm_cpu__show_page_tables(struct kvm_cpu *vcpu) {

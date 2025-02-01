@@ -98,7 +98,7 @@ static void rtas_power_off(struct kvm_cpu *vcpu, uint32_t token, uint32_t nargs,
         rtas_st(vcpu->kvm, rets, 0, -3);
         return;
     }
-    kvm__reboot(vcpu->kvm);
+    kvm_reboot(vcpu->kvm);
 }
 
 static void rtas_system_reboot(struct kvm_cpu *vcpu, uint32_t token, uint32_t nargs, target_ulong args, uint32_t nret,
@@ -109,7 +109,7 @@ static void rtas_system_reboot(struct kvm_cpu *vcpu, uint32_t token, uint32_t na
     }
 
     /* NB this actually halts the VM */
-    kvm__reboot(vcpu->kvm);
+    kvm_reboot(vcpu->kvm);
 }
 
 static void rtas_query_cpu_stopped_state(struct kvm_cpu *vcpu, uint32_t token, uint32_t nargs, target_ulong args,

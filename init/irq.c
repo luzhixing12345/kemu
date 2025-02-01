@@ -57,7 +57,7 @@ static bool check_for_irq_routing(struct kvm *kvm) {
     static int has_irq_routing = 0;
 
     if (has_irq_routing == 0) {
-        if (kvm__supports_extension(kvm, KVM_CAP_IRQ_ROUTING))
+        if (kvm_supports_extension(kvm, KVM_CAP_IRQ_ROUTING))
             has_irq_routing = 1;
         else
             has_irq_routing = -1;
@@ -71,7 +71,7 @@ static int irq__update_msix_routes(struct kvm *kvm, struct kvm_irq_routing_entry
 }
 
 static bool irq__default_can_signal_msi(struct kvm *kvm) {
-    return kvm__supports_extension(kvm, KVM_CAP_SIGNAL_MSI);
+    return kvm_supports_extension(kvm, KVM_CAP_SIGNAL_MSI);
 }
 
 static int irq__default_signal_msi(struct kvm *kvm, struct kvm_msi *msi) {

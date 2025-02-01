@@ -447,7 +447,7 @@ static void cfi_flash_write(struct cfi_flash_device *sfdev, u16 command, u64 fad
 static int map_flash_memory(struct kvm *kvm, struct cfi_flash_device *sfdev) {
     int ret;
 
-    ret = kvm__register_mem(
+    ret = kvm_register_mem(
         kvm, sfdev->base_addr, sfdev->size, sfdev->flash_memory, KVM_MEM_TYPE_RAM | KVM_MEM_TYPE_READONLY);
     if (!ret)
         sfdev->is_mapped = true;
@@ -462,7 +462,7 @@ static int map_flash_memory(struct kvm *kvm, struct cfi_flash_device *sfdev) {
 static int unmap_flash_memory(struct kvm *kvm, struct cfi_flash_device *sfdev) {
     int ret;
 
-    ret = kvm__destroy_mem(kvm, sfdev->base_addr, sfdev->size, sfdev->flash_memory);
+    ret = kvm_destroy_mem(kvm, sfdev->base_addr, sfdev->size, sfdev->flash_memory);
 
     if (!ret)
         sfdev->is_mapped = false;
@@ -582,7 +582,7 @@ static struct cfi_flash_device *create_flash_device_file(struct kvm *kvm, const 
     if (ret)
         goto out_unmap;
 
-    ret = kvm__register_mmio(kvm, sfdev->base_addr, sfdev->size, false, cfi_flash_mmio, sfdev);
+    ret = kvm_register_mmio(kvm, sfdev->base_addr, sfdev->size, false, cfi_flash_mmio, sfdev);
     if (ret) {
         device__unregister(&sfdev->dev_hdr);
         goto out_unmap;

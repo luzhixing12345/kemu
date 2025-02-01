@@ -41,12 +41,12 @@ int kvm_cmd_stop(int argc, const char **argv, const char *prefix) {
     parse_stop_options(argc, argv);
 
     if (all)
-        return kvm__enumerate_instances(do_stop);
+        return kvm_enumerate_instances(do_stop);
 
     if (instance_name == NULL)
         kvm_stop_help();
 
-    instance = kvm__get_sock_by_instance(instance_name);
+    instance = kvm_get_sock_by_instance(instance_name);
 
     if (instance <= 0)
         die("Failed locating instance");

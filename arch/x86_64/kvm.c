@@ -33,14 +33,14 @@ struct kvm_ext kvm_req_ext[] = {{DEFINE_KVM_EXT(KVM_CAP_COALESCED_MMIO)},
                                 {DEFINE_KVM_EXT(KVM_CAP_EXT_CPUID)},
                                 {0, 0}};
 
-u64 kvm__arch_default_ram_address(void) {
+u64 kvm_arch_default_ram_address(void) {
     return 0;
 }
 
-void kvm__arch_validate_cfg(struct kvm *kvm) {
+void kvm_arch_validate_cfg(struct kvm *kvm) {
 }
 
-bool kvm__arch_cpu_supports_vm(void) {
+bool kvm_arch_cpu_supports_vm(void) {
     struct cpuid_regs regs;
     u32 eax_base;
     int feature;
@@ -88,7 +88,7 @@ bool kvm__arch_cpu_supports_vm(void) {
  * a gap between 0xe0000000 and 0x100000000 in the guest virtual mem space.
  */
 
-void kvm__init_ram(struct kvm *kvm) {
+void kvm_init_ram(struct kvm *kvm) {
     u64 phys_start, phys_size;
     void *host_mem;
 
@@ -99,7 +99,7 @@ void kvm__init_ram(struct kvm *kvm) {
         phys_size = kvm->ram_size;
         host_mem = kvm->ram_start;
 
-        kvm__register_ram(kvm, phys_start, phys_size, host_mem);
+        kvm_register_ram(kvm, phys_start, phys_size, host_mem);
     } else {
         /* First RAM range from zero to the PCI gap: */
 
@@ -107,7 +107,7 @@ void kvm__init_ram(struct kvm *kvm) {
         phys_size = KVM_32BIT_GAP_START;
         host_mem = kvm->ram_start;
 
-        kvm__register_ram(kvm, phys_start, phys_size, host_mem);
+        kvm_register_ram(kvm, phys_start, phys_size, host_mem);
 
         /* Second RAM range from 4GB to the end of RAM: */
 
@@ -115,12 +115,12 @@ void kvm__init_ram(struct kvm *kvm) {
         phys_size = kvm->ram_size - phys_start;
         host_mem = kvm->ram_start + phys_start;
 
-        kvm__register_ram(kvm, phys_start, phys_size, host_mem);
+        kvm_register_ram(kvm, phys_start, phys_size, host_mem);
     }
 }
 
 /* Arch-specific commandline setup */
-void kvm__arch_set_cmdline(char *cmdline, bool video) {
+void kvm_arch_set_cmdline(char *cmdline, bool video) {
     strcpy(cmdline,
            "noapic noacpi pci=conf1 reboot=k panic=1 i8042.direct=1 "
            "i8042.dumbkbd=1 i8042.nopnp=1");
@@ -131,7 +131,7 @@ void kvm__arch_set_cmdline(char *cmdline, bool video) {
 }
 
 /* Architecture-specific KVM init */
-void kvm__arch_init(struct kvm *kvm) {
+void kvm_arch_init(struct kvm *kvm) {
     const char *hugetlbfs_path = kvm->cfg.hugetlbfs_path;
     struct kvm_pit_config pit_config = {
         .flags = 0,
@@ -151,7 +151,7 @@ void kvm__arch_init(struct kvm *kvm) {
         kvm->ram_size = ram_size + KVM_32BIT_GAP_SIZE;
         if (kvm->ram_start != MAP_FAILED)
             /*
-             * We mprotect the gap (see kvm__init_ram() for details) PROT_NONE so that
+             * We mprotect the gap (see kvm_init_ram() for details) PROT_NONE so that
              * if we accidently write to it, we will know.
              */
             mprotect(kvm->ram_start + KVM_32BIT_GAP_START, KVM_32BIT_GAP_SIZE, PROT_NONE);
@@ -170,11 +170,11 @@ void kvm__arch_init(struct kvm *kvm) {
         die_perror("KVM_CREATE_PIT2 ioctl");
 }
 
-void kvm__arch_delete_ram(struct kvm *kvm) {
+void kvm_arch_delete_ram(struct kvm *kvm) {
     munmap(kvm->ram_start, kvm->ram_size);
 }
 
-void kvm__irq_line(struct kvm *kvm, int irq, int level) {
+void kvm_irq_line(struct kvm *kvm, int irq, int level) {
     struct kvm_irq_level irq_level;
 
     irq_level = (struct kvm_irq_level){
@@ -188,9 +188,9 @@ void kvm__irq_line(struct kvm *kvm, int irq, int level) {
         die_perror("KVM_IRQ_LINE failed");
 }
 
-void kvm__irq_trigger(struct kvm *kvm, int irq) {
-    kvm__irq_line(kvm, irq, 1);
-    kvm__irq_line(kvm, irq, 0);
+void kvm_irq_trigger(struct kvm *kvm, int irq) {
+    kvm_irq_line(kvm, irq, 1);
+    kvm_irq_line(kvm, irq, 0);
 }
 
 #define BOOT_LOADER_SELECTOR   0x1000
@@ -331,7 +331,7 @@ static bool load_bzimage(struct kvm *kvm, int fd_kernel, int fd_initrd, const ch
     return true;
 }
 
-bool kvm__arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
+bool kvm_arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
     if (load_bzimage(kvm, fd_kernel, fd_initrd, kernel_cmdline))
         return true;
     pr_warning("Kernel image is not a bzImage.");
@@ -344,13 +344,13 @@ bool kvm__arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, 
 }
 
 /**
- * kvm__arch_setup_firmware - inject BIOS into guest system memory
+ * kvm_arch_setup_firmware - inject BIOS into guest system memory
  * @kvm - guest system descriptor
  *
  * This function is a main routine where we poke guest memory
  * and install BIOS there.
  */
-int kvm__arch_setup_firmware(struct kvm *kvm) {
+int kvm_arch_setup_firmware(struct kvm *kvm) {
     /* standart minimal configuration */
     setup_bios(kvm);
 
@@ -359,11 +359,11 @@ int kvm__arch_setup_firmware(struct kvm *kvm) {
     return 0;
 }
 
-int kvm__arch_free_firmware(struct kvm *kvm) {
+int kvm_arch_free_firmware(struct kvm *kvm) {
     return 0;
 }
 
-void kvm__arch_read_term(struct kvm *kvm) {
+void kvm_arch_read_term(struct kvm *kvm) {
     serial8250__update_consoles(kvm);
     virtio_console__inject_interrupt(kvm);
 }

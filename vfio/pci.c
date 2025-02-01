@@ -485,7 +485,7 @@ static int vfio_pci_bar_activate(struct kvm *kvm, struct pci_device_header *pci_
 
     if (has_msix && (u32)bar_num == table->bar) {
         table->guest_phys_addr = region->guest_phys_addr;
-        ret = kvm__register_mmio(kvm, table->guest_phys_addr, table->size, false, vfio_pci_msix_table_access, pdev);
+        ret = kvm_register_mmio(kvm, table->guest_phys_addr, table->size, false, vfio_pci_msix_table_access, pdev);
         /*
          * The MSIX table and the PBA structure can share the same BAR,
          * but for convenience we register different regions for mmio
@@ -501,7 +501,7 @@ static int vfio_pci_bar_activate(struct kvm *kvm, struct pci_device_header *pci_
             pba->guest_phys_addr = table->guest_phys_addr + pba->bar_offset;
         else
             pba->guest_phys_addr = region->guest_phys_addr;
-        ret = kvm__register_mmio(kvm, pba->guest_phys_addr, pba->size, false, vfio_pci_msix_pba_access, pdev);
+        ret = kvm_register_mmio(kvm, pba->guest_phys_addr, pba->size, false, vfio_pci_msix_pba_access, pdev);
         goto out;
     }
 
@@ -525,8 +525,8 @@ static int vfio_pci_bar_deactivate(struct kvm *kvm, struct pci_device_header *pc
     has_msix = pdev->irq_modes & VFIO_PCI_IRQ_MODE_MSIX;
 
     if (has_msix && (u32)bar_num == table->bar) {
-        success = kvm__deregister_mmio(kvm, table->guest_phys_addr);
-        /* kvm__deregister_mmio fails when the region is not found. */
+        success = kvm_deregister_mmio(kvm, table->guest_phys_addr);
+        /* kvm_deregister_mmio fails when the region is not found. */
         ret = (success ? 0 : -ENOENT);
         /* See vfio_pci_bar_activate(). */
         if (ret < 0 || table->bar != pba->bar)
@@ -534,7 +534,7 @@ static int vfio_pci_bar_deactivate(struct kvm *kvm, struct pci_device_header *pc
     }
 
     if (has_msix && (u32)bar_num == pba->bar) {
-        success = kvm__deregister_mmio(kvm, pba->guest_phys_addr);
+        success = kvm_deregister_mmio(kvm, pba->guest_phys_addr);
         ret = (success ? 0 : -ENOENT);
         goto out;
     }

@@ -43,11 +43,11 @@ static char kern_cmdline[2048];
 struct kvm_ext kvm_req_ext[] = {
     {DEFINE_KVM_EXT(KVM_CAP_PPC_UNSET_IRQ)}, {DEFINE_KVM_EXT(KVM_CAP_PPC_IRQ_LEVEL)}, {0, 0}};
 
-u64 kvm__arch_default_ram_address(void) {
+u64 kvm_arch_default_ram_address(void) {
     return 0;
 }
 
-void kvm__arch_validate_cfg(struct kvm *kvm) {
+void kvm_arch_validate_cfg(struct kvm *kvm) {
 }
 
 static uint32_t mfpvr(void) {
@@ -56,11 +56,11 @@ static uint32_t mfpvr(void) {
     return r;
 }
 
-bool kvm__arch_cpu_supports_vm(void) {
+bool kvm_arch_cpu_supports_vm(void) {
     return true;
 }
 
-void kvm__init_ram(struct kvm *kvm) {
+void kvm_init_ram(struct kvm *kvm) {
     u64 phys_start, phys_size;
     void *host_mem;
 
@@ -78,15 +78,15 @@ void kvm__init_ram(struct kvm *kvm) {
             "overlaps MMIO!\n",
             phys_size);
 
-    kvm__register_ram(kvm, phys_start, phys_size, host_mem);
+    kvm_register_ram(kvm, phys_start, phys_size, host_mem);
 }
 
-void kvm__arch_set_cmdline(char *cmdline, bool video) {
+void kvm_arch_set_cmdline(char *cmdline, bool video) {
     /* We don't need anything unusual in here. */
 }
 
 /* Architecture-specific KVM init */
-void kvm__arch_init(struct kvm *kvm) {
+void kvm_arch_init(struct kvm *kvm) {
     const char *hugetlbfs_path = kvm->cfg.hugetlbfs_path;
     int cap_ppc_rma;
     unsigned long hpt;
@@ -137,21 +137,21 @@ void kvm__arch_init(struct kvm *kvm) {
                      SPAPR_PCI_IO_WIN_SIZE);
 }
 
-void kvm__arch_delete_ram(struct kvm *kvm) {
+void kvm_arch_delete_ram(struct kvm *kvm) {
     munmap(kvm->ram_start, kvm->ram_size);
 }
 
-void kvm__irq_trigger(struct kvm *kvm, int irq) {
-    kvm__irq_line(kvm, irq, 1);
-    kvm__irq_line(kvm, irq, 0);
+void kvm_irq_trigger(struct kvm *kvm, int irq) {
+    kvm_irq_line(kvm, irq, 1);
+    kvm_irq_line(kvm, irq, 0);
 }
 
-void kvm__arch_read_term(struct kvm *kvm) {
+void kvm_arch_read_term(struct kvm *kvm) {
     /* FIXME: Should register callbacks to platform-specific polls */
     spapr_hvcons_poll(kvm);
 }
 
-bool kvm__arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
+bool kvm_arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
     void *p;
     void *k_start;
     ssize_t filesize;
@@ -457,9 +457,9 @@ static int setup_fdt(struct kvm *kvm) {
 firmware_init(setup_fdt);
 
 /**
- * kvm__arch_setup_firmware
+ * kvm_arch_setup_firmware
  */
-int kvm__arch_setup_firmware(struct kvm *kvm) {
+int kvm_arch_setup_firmware(struct kvm *kvm) {
     /*
      * Set up RTAS stub.  All it is is a single hypercall:
      *  0:   7c 64 1b 78     mr      r4,r3
@@ -484,6 +484,6 @@ int kvm__arch_setup_firmware(struct kvm *kvm) {
     return 0;
 }
 
-int kvm__arch_free_firmware(struct kvm *kvm) {
+int kvm_arch_free_firmware(struct kvm *kvm) {
     return 0;
 }

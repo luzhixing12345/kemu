@@ -14,19 +14,19 @@ struct kvm_ext kvm_req_ext[] = {
     {0, 0},
 };
 
-u64 kvm__arch_default_ram_address(void) {
+u64 kvm_arch_default_ram_address(void) {
     return RISCV_RAM;
 }
 
-void kvm__arch_validate_cfg(struct kvm *kvm) {
+void kvm_arch_validate_cfg(struct kvm *kvm) {
 }
 
-bool kvm__arch_cpu_supports_vm(void) {
+bool kvm_arch_cpu_supports_vm(void) {
     /* The KVM capability check is enough. */
     return true;
 }
 
-void kvm__init_ram(struct kvm *kvm) {
+void kvm_init_ram(struct kvm *kvm) {
     int err;
     u64 phys_start, phys_size;
     void *host_mem;
@@ -35,7 +35,7 @@ void kvm__init_ram(struct kvm *kvm) {
     phys_size = kvm->ram_size;
     host_mem = kvm->ram_start;
 
-    err = kvm__register_ram(kvm, phys_start, phys_size, host_mem);
+    err = kvm_register_ram(kvm, phys_start, phys_size, host_mem);
     if (err)
         die("Failed to register %lld bytes of memory at physical "
             "address 0x%llx [err %d]",
@@ -46,16 +46,16 @@ void kvm__init_ram(struct kvm *kvm) {
     kvm->arch.memory_guest_start = phys_start;
 }
 
-void kvm__arch_delete_ram(struct kvm *kvm) {
+void kvm_arch_delete_ram(struct kvm *kvm) {
     munmap(kvm->arch.ram_alloc_start, kvm->arch.ram_alloc_size);
 }
 
-void kvm__arch_read_term(struct kvm *kvm) {
+void kvm_arch_read_term(struct kvm *kvm) {
     serial8250__update_consoles(kvm);
     virtio_console__inject_interrupt(kvm);
 }
 
-void kvm__arch_set_cmdline(char *cmdline, bool video) {
+void kvm_arch_set_cmdline(char *cmdline, bool video) {
 }
 
 #if __riscv_xlen == 64
@@ -64,7 +64,7 @@ void kvm__arch_set_cmdline(char *cmdline, bool video) {
 #define HUGEPAGE_SIZE SZ_4M
 #endif
 
-void kvm__arch_init(struct kvm *kvm) {
+void kvm_arch_init(struct kvm *kvm) {
     /*
      * Allocate guest memory. We must align our buffer to 64K to
      * correlate with the maximum guest page size for virtio-mmio.
@@ -92,7 +92,7 @@ void kvm__arch_init(struct kvm *kvm) {
 
 #define FDT_ALIGN    SZ_4M
 #define INITRD_ALIGN 8
-bool kvm__arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
+bool kvm_arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
     void *pos, *kernel_end, *limit;
     unsigned long guest_addr, kernel_offset;
     ssize_t file_size;
@@ -166,11 +166,11 @@ bool kvm__arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, 
     return true;
 }
 
-bool kvm__load_firmware(struct kvm *kvm, const char *firmware_filename) {
+bool kvm_load_firmware(struct kvm *kvm, const char *firmware_filename) {
     /* TODO: Firmware loading to be supported later. */
     return false;
 }
 
-int kvm__arch_setup_firmware(struct kvm *kvm) {
+int kvm_arch_setup_firmware(struct kvm *kvm) {
     return 0;
 }

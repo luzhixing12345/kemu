@@ -8,7 +8,7 @@
  *   0x00000000-0x0fffffff : System RAM
  *   0x10000000-0x1fffffff : I/O (defined by KVM_MMIO_START and KVM_MMIO_SIZE)
  *   0x20000000-    ...    : System RAM
- * See also kvm__init_ram().
+ * See also kvm_init_ram().
  */
 
 #define KVM_MMIO_START        0x10000000

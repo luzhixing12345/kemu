@@ -70,7 +70,7 @@ static int img_name_parser(const struct option *opt, const char *arg, int unset)
     char path[PATH_MAX];
     struct stat st;
 
-    snprintf(path, PATH_MAX, "%s%s", kvm__get_dir(), arg);
+    snprintf(path, PATH_MAX, "%s%s", kvm_get_dir(), arg);
 
     if ((stat(arg, &st) == 0 && S_ISDIR(st.st_mode)) || (stat(path, &st) == 0 && S_ISDIR(st.st_mode)))
         return virtio_9p_img_name_parser(opt, arg, unset);
@@ -138,7 +138,7 @@ static int mem_parser(const struct option *opt, const char *arg, int unset) {
     if (kvm->cfg.ram_size == 0)
         die("Invalid RAM size: %s", arg);
 
-    if (kvm__arch_has_cfg_ram_address() && *next == '@') {
+    if (kvm_arch_has_cfg_ram_address() && *next == '@') {
         next++;
         if (*next == '\0')
             die("Missing memory address: %s", arg);
@@ -325,7 +325,7 @@ void *kvm_cpu_thread(void *arg) {
     current_kvm_cpu = arg;
 
     sprintf(name, "kvm-vcpu-%lu", current_kvm_cpu->cpu_id);
-    kvm__set_thread_name(name);
+    kvm_set_thread_name(name);
 
     if (kvm_cpu__start(current_kvm_cpu))
         goto panic_kvm;
@@ -490,7 +490,7 @@ static int kvm_run_set_sandbox(struct kvm *kvm) {
     const char *guestfs_name = kvm->cfg.custom_rootfs_name;
     char path[PATH_MAX], script[PATH_MAX], *tmp;
 
-    snprintf(path, PATH_MAX, "%s%s/virt/sandbox.sh", kvm__get_dir(), guestfs_name);
+    snprintf(path, PATH_MAX, "%s%s/virt/sandbox.sh", kvm_get_dir(), guestfs_name);
 
     remove(path);
 
@@ -596,7 +596,7 @@ static void kvm_run_set_real_cmdline(struct kvm *kvm) {
     video = kvm->cfg.vnc || kvm->cfg.sdl || kvm->cfg.gtk;
 
     memset(real_cmdline, 0, sizeof(real_cmdline));
-    kvm__arch_set_cmdline(real_cmdline, video);
+    kvm_arch_set_cmdline(real_cmdline, video);
 
     if (video) {
         strcat(real_cmdline, " console=tty0");
@@ -657,13 +657,13 @@ static void kvm_run_validate_cfg(struct kvm *kvm) {
         }
     }
 
-    kvm__arch_validate_cfg(kvm);
+    kvm_arch_validate_cfg(kvm);
 }
 
 static struct kvm *kvm_cmd_run_init(int argc, const char **argv) {
     static char default_name[20];
     unsigned int nr_online_cpus;
-    struct kvm *kvm = kvm__new();
+    struct kvm *kvm = kvm_new();
 
     if (IS_ERR(kvm))
         return kvm;
@@ -677,7 +677,7 @@ static struct kvm *kvm_cmd_run_init(int argc, const char **argv) {
      * user setting the base address to zero or letting it unset and using
      * the default value.
      */
-    kvm->cfg.ram_addr = kvm__arch_default_ram_address();
+    kvm->cfg.ram_addr = kvm_arch_default_ram_address();
 
     while (argc != 0) {
         BUILD_OPTIONS(options, &kvm->cfg, kvm);
@@ -789,7 +789,7 @@ static struct kvm *kvm_cmd_run_init(int argc, const char **argv) {
         kvm_setup_create_new(kvm->cfg.custom_rootfs_name);
         kvm_setup_resolv(kvm->cfg.custom_rootfs_name);
 
-        snprintf(tmp, PATH_MAX, "%s%s", kvm__get_dir(), "default");
+        snprintf(tmp, PATH_MAX, "%s%s", kvm_get_dir(), "default");
         if (virtio_9p__register(kvm, tmp, "/dev/root") < 0)
             die("Unable to initialize virtio 9p");
         if (virtio_9p__register(kvm, "/", "hostfs") < 0)

@@ -81,12 +81,12 @@ int kvm_cmd_debug(int argc, const char **argv, const char *prefix) {
     int r;
 
     if (all)
-        return kvm__enumerate_instances(do_debug);
+        return kvm_enumerate_instances(do_debug);
 
     if (instance_name == NULL)
         kvm_debug_help();
 
-    instance = kvm__get_sock_by_instance(instance_name);
+    instance = kvm_get_sock_by_instance(instance_name);
 
     if (instance <= 0)
         die("Failed locating instance");

@@ -189,13 +189,13 @@ static int vfio_setup_trap_region(struct kvm *kvm, struct vfio_device *vdev, str
     if (region->is_ioport) {
         int port;
 
-        port = kvm__register_pio(kvm, region->port_base, region->info.size, vfio_ioport_mmio, region);
+        port = kvm_register_pio(kvm, region->port_base, region->info.size, vfio_ioport_mmio, region);
         if (port < 0)
             return port;
         return 0;
     }
 
-    return kvm__register_mmio(kvm, region->guest_phys_addr, region->info.size, false, vfio_mmio_access, region);
+    return kvm_register_mmio(kvm, region->guest_phys_addr, region->info.size, false, vfio_mmio_access, region);
 }
 
 int vfio_map_region(struct kvm *kvm, struct vfio_device *vdev, struct vfio_region *region) {
@@ -212,7 +212,7 @@ int vfio_map_region(struct kvm *kvm, struct vfio_device *vdev, struct vfio_regio
      * address isn't page aligned, let's emulate the region ourselves.
      */
     if (region->guest_phys_addr & (PAGE_SIZE - 1))
-        return kvm__register_mmio(kvm, region->guest_phys_addr, region->info.size, false, vfio_mmio_access, region);
+        return kvm_register_mmio(kvm, region->guest_phys_addr, region->info.size, false, vfio_mmio_access, region);
 
     if (region->info.flags & VFIO_REGION_INFO_FLAG_READ)
         prot |= PROT_READ;
@@ -230,7 +230,7 @@ int vfio_map_region(struct kvm *kvm, struct vfio_device *vdev, struct vfio_regio
     }
     region->host_addr = base;
 
-    ret = kvm__register_dev_mem(kvm, region->guest_phys_addr, map_size, region->host_addr);
+    ret = kvm_register_dev_mem(kvm, region->guest_phys_addr, map_size, region->host_addr);
     if (ret) {
         vfio_dev_err(vdev, "failed to register region with KVM");
         return ret;
@@ -244,13 +244,13 @@ void vfio_unmap_region(struct kvm *kvm, struct vfio_region *region) {
 
     if (region->host_addr) {
         map_size = ALIGN(region->info.size, PAGE_SIZE);
-        kvm__destroy_mem(kvm, region->guest_phys_addr, map_size, region->host_addr);
+        kvm_destroy_mem(kvm, region->guest_phys_addr, map_size, region->host_addr);
         munmap(region->host_addr, region->info.size);
         region->host_addr = NULL;
     } else if (region->is_ioport) {
-        kvm__deregister_pio(kvm, region->port_base);
+        kvm_deregister_pio(kvm, region->port_base);
     } else {
-        kvm__deregister_mmio(kvm, region->guest_phys_addr);
+        kvm_deregister_mmio(kvm, region->guest_phys_addr);
     }
 }
 
@@ -379,7 +379,7 @@ static int vfio_configure_reserved_regions(struct kvm *kvm, struct vfio_group *g
         return -errno;
 
     while (fscanf(file, "0x%llx 0x%llx %8s\n", &start, &end, type) == 3) {
-        ret = kvm__reserve_mem(kvm, start, end - start + 1);
+        ret = kvm_reserve_mem(kvm, start, end - start + 1);
         if (ret)
             break;
     }
@@ -593,7 +593,7 @@ static int vfio_container_init(struct kvm *kvm) {
         pr_info("Using IOMMU type %d for VFIO container", iommu_type);
     }
 
-    return kvm__for_each_mem_bank(kvm, KVM_MEM_TYPE_RAM, vfio_map_mem_bank, NULL);
+    return kvm_for_each_mem_bank(kvm, KVM_MEM_TYPE_RAM, vfio_map_mem_bank, NULL);
 }
 
 static int vfio__init(struct kvm *kvm) {
@@ -632,7 +632,7 @@ static int vfio__exit(struct kvm *kvm) {
 
     free(vfio_devices);
 
-    kvm__for_each_mem_bank(kvm, KVM_MEM_TYPE_RAM, vfio_unmap_mem_bank, NULL);
+    kvm_for_each_mem_bank(kvm, KVM_MEM_TYPE_RAM, vfio_unmap_mem_bank, NULL);
     close(vfio_container);
 
     free(kvm->cfg.vfio_devices);

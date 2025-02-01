@@ -89,7 +89,7 @@ static int gicv2m_signal_msi(struct kvm *kvm, struct kvm_msi *msi) {
         return -EINVAL;
     }
 
-    kvm__irq_trigger(kvm, spi);
+    kvm_irq_trigger(kvm, spi);
     return 0;
 }
 
@@ -139,5 +139,5 @@ int gic__create_gicv2m_frame(struct kvm *kvm, u64 base) {
 
     msi_routing_ops = &gicv2m_routing;
 
-    return kvm__register_mmio(kvm, base, KVM_VGIC_V2M_SIZE, false, gicv2m_mmio_callback, kvm);
+    return kvm_register_mmio(kvm, base, KVM_VGIC_V2M_SIZE, false, gicv2m_mmio_callback, kvm);
 }

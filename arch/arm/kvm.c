@@ -18,12 +18,12 @@ struct kvm_ext kvm_req_ext[] = {
     {0, 0},
 };
 
-bool kvm__arch_cpu_supports_vm(void) {
+bool kvm_arch_cpu_supports_vm(void) {
     /* The KVM capability check is enough. */
     return true;
 }
 
-void kvm__init_ram(struct kvm *kvm) {
+void kvm_init_ram(struct kvm *kvm) {
     u64 phys_start, phys_size;
     void *host_mem;
     int err;
@@ -53,7 +53,7 @@ void kvm__init_ram(struct kvm *kvm) {
     phys_size = kvm->ram_size;
     host_mem = kvm->ram_start;
 
-    err = kvm__register_ram(kvm, phys_start, phys_size, host_mem);
+    err = kvm_register_ram(kvm, phys_start, phys_size, host_mem);
     if (err)
         die("Failed to register %lld bytes of memory at physical "
             "address 0x%llx [err %d]",
@@ -66,29 +66,29 @@ void kvm__init_ram(struct kvm *kvm) {
     pr_debug("RAM created at 0x%llx - 0x%llx", phys_start, phys_start + phys_size - 1);
 }
 
-void kvm__arch_delete_ram(struct kvm *kvm) {
+void kvm_arch_delete_ram(struct kvm *kvm) {
     munmap(kvm->arch.ram_alloc_start, kvm->arch.ram_alloc_size);
 }
 
-void kvm__arch_read_term(struct kvm *kvm) {
+void kvm_arch_read_term(struct kvm *kvm) {
     serial8250__update_consoles(kvm);
     virtio_console__inject_interrupt(kvm);
 }
 
-void kvm__arch_set_cmdline(char *cmdline, bool video) {
+void kvm_arch_set_cmdline(char *cmdline, bool video) {
 }
 
-void kvm__arch_init(struct kvm *kvm) {
+void kvm_arch_init(struct kvm *kvm) {
     /* Create the virtual GIC. */
     if (gic__create(kvm, kvm->cfg.arch.irqchip))
         die("Failed to create virtual GIC");
 
-    kvm__arch_enable_mte(kvm);
+    kvm_arch_enable_mte(kvm);
 }
 
 #define FDT_ALIGN    SZ_2M
 #define INITRD_ALIGN 4
-bool kvm__arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
+bool kvm_arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
     void *pos, *kernel_end, *limit;
     unsigned long guest_addr;
     ssize_t file_size;
@@ -99,7 +99,7 @@ bool kvm__arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, 
      */
     limit = kvm->ram_start + min(kvm->ram_size, (u64)SZ_256M) - 1;
 
-    pos = kvm->ram_start + kvm__arch_get_kern_offset(kvm, fd_kernel);
+    pos = kvm->ram_start + kvm_arch_get_kern_offset(kvm, fd_kernel);
     kvm->arch.kern_guest_start = host_to_guest_flat(kvm, pos);
     file_size = read_file(fd_kernel, pos, limit - pos);
     if (file_size < 0) {
@@ -178,7 +178,7 @@ static bool validate_fw_addr(struct kvm *kvm, u64 fw_addr) {
     return true;
 }
 
-bool kvm__load_firmware(struct kvm *kvm, const char *firmware_filename) {
+bool kvm_load_firmware(struct kvm *kvm, const char *firmware_filename) {
     u64 fw_addr = kvm->cfg.arch.fw_addr;
     void *host_pos;
     void *limit;
@@ -222,6 +222,6 @@ bool kvm__load_firmware(struct kvm *kvm, const char *firmware_filename) {
     return true;
 }
 
-int kvm__arch_setup_firmware(struct kvm *kvm) {
+int kvm_arch_setup_firmware(struct kvm *kvm) {
     return 0;
 }

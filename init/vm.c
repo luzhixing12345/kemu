@@ -50,7 +50,7 @@ static int vm_add_disk(struct kvm *kvm, const char *disk_path) {
 void get_kernel_real_cmdline(struct kvm *kvm) {
     static char real_cmdline[2048];
     memset(real_cmdline, 0, sizeof(real_cmdline));
-    kvm__arch_set_cmdline(real_cmdline, false);
+    kvm_arch_set_cmdline(real_cmdline, false);
 
     switch (kvm->cfg.active_console) {
         case CONSOLE_HV:
@@ -80,10 +80,9 @@ void get_kernel_real_cmdline(struct kvm *kvm) {
 }
 
 int vm_config_init(struct kvm *kvm) {
-    // struct vm_config *vm_config = &vm->cfg;        // configuration of the vm
     struct kvm_config *config = &kvm->cfg;  // configuration of the kvm
 
-    config->ram_addr = kvm__arch_default_ram_address();
+    config->ram_addr = kvm_arch_default_ram_address();
 
     // CPU
     if (!config->nrcpus) {
@@ -170,7 +169,7 @@ int vm_config_init(struct kvm *kvm) {
     // 	kvm_setup_create_new(kvm->cfg.custom_rootfs_name);
     // 	kvm_setup_resolv(kvm->cfg.custom_rootfs_name);
 
-    // 	snprintf(tmp, PATH_MAX, "%s%s", kvm__get_dir(), "default");
+    // 	snprintf(tmp, PATH_MAX, "%s%s", kvm_get_dir(), "default");
     // 	if (virtio_9p__register(kvm, tmp, "/dev/root") < 0)
     // 		die("Unable to initialize virtio 9p");
     // 	if (virtio_9p__register(kvm, "/", "hostfs") < 0)
@@ -274,6 +273,11 @@ int vm_run(struct kvm *kvm) {
 
 int vm_init(struct kvm *kvm) {
     int ret = 0;
+
+    ret = vm_validate_cfg(&kvm->cfg);
+    if (ret < 0)
+        goto fail;
+
     ret = vm_config_init(kvm);
     if (ret < 0)
         goto fail;

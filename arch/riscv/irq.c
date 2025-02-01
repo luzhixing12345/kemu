@@ -14,7 +14,7 @@ u32 riscv_irqchip_msi_phandle = PHANDLE_RESERVED;
 bool riscv_irqchip_line_sensing;
 bool riscv_irqchip_irqfd_ready;
 
-void kvm__irq_line(struct kvm *kvm, int irq, int level) {
+void kvm_irq_line(struct kvm *kvm, int irq, int level) {
     struct kvm_irq_level irq_level;
 
     if (riscv_irqchip_inkernel) {
@@ -30,10 +30,10 @@ void kvm__irq_line(struct kvm *kvm, int irq, int level) {
     }
 }
 
-void kvm__irq_trigger(struct kvm *kvm, int irq) {
+void kvm_irq_trigger(struct kvm *kvm, int irq) {
     if (riscv_irqchip_inkernel) {
-        kvm__irq_line(kvm, irq, VIRTIO_IRQ_HIGH);
-        kvm__irq_line(kvm, irq, VIRTIO_IRQ_LOW);
+        kvm_irq_line(kvm, irq, VIRTIO_IRQ_HIGH);
+        kvm_irq_line(kvm, irq, VIRTIO_IRQ_LOW);
     } else {
         if (riscv_irqchip_trigger)
             riscv_irqchip_trigger(kvm, irq, 1, true);

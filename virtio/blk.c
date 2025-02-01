@@ -184,7 +184,7 @@ static void *virtio_blk_thread(void *dev) {
     u64 data;
     int r;
 
-    kvm__set_thread_name("virtio-blk-io");
+    kvm_set_thread_name("virtio-blk-io");
 
     while (1) {
         r = read(bdev->io_efd, &data, sizeof(u64));

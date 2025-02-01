@@ -50,7 +50,7 @@ static void kvm_cpu_signal_handler(int signum) {
         if (current_kvm_cpu->paused)
             die("Pause signaled for already paused CPU\n");
 
-        /* pause_lock is held by kvm__pause() */
+        /* pause_lock is held by kvm_pause() */
         current_kvm_cpu->paused = 1;
 
         /*
@@ -59,7 +59,7 @@ static void kvm_cpu_signal_handler(int signum) {
          * not be send to this thread until it acquires and releases
          * the pause_lock.
          */
-        kvm__notify_paused();
+        kvm_notify_paused();
     }
 
     /* For SIGKVMTASK cpu->task is already set */
@@ -220,7 +220,7 @@ int kvm_cpu__start(struct kvm_cpu *cpu) {
                          * Ensure that all VCPUs are torn down,
                          * regardless of which CPU generated the event.
                          */
-                        kvm__reboot(cpu->kvm);
+                        kvm_reboot(cpu->kvm);
                         goto exit_kvm;
                 };
                 break;
@@ -246,8 +246,8 @@ panic_kvm:
 int kvm_cpu__init(struct kvm *kvm) {
     int max_cpus, recommended_cpus, i;
 
-    max_cpus = kvm__max_cpus(kvm);
-    recommended_cpus = kvm__recommended_cpus(kvm);
+    max_cpus = kvm_max_cpus(kvm);
+    recommended_cpus = kvm_recommended_cpus(kvm);
 
     if (kvm->cfg.nrcpus > max_cpus) {
         pr_warning("Limiting the number of CPUs to %d", max_cpus);
@@ -294,7 +294,7 @@ int kvm_cpu__exit(struct kvm *kvm) {
     kvm_cpu__delete(kvm->cpus[0]);
     kvm->cpus[0] = NULL;
 
-    kvm__pause(kvm);
+    kvm_pause(kvm);
     for (i = 1; i < kvm->nrcpus; i++) {
         if (kvm->cpus[i]->is_running) {
             pthread_kill(kvm->cpus[i]->thread, SIGKVMEXIT);
@@ -305,7 +305,7 @@ int kvm_cpu__exit(struct kvm *kvm) {
         if (ret == NULL)
             r = 0;
     }
-    kvm__continue(kvm);
+    kvm_continue(kvm);
 
     free(kvm->cpus);
 

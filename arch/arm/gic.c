@@ -320,7 +320,7 @@ static int gic__init_gic(struct kvm *kvm) {
             return ret;
     }
 
-    kvm->msix_needs_devid = kvm__supports_vm_extension(kvm, KVM_CAP_MSI_DEVID);
+    kvm->msix_needs_devid = kvm_supports_vm_extension(kvm, KVM_CAP_MSI_DEVID);
 
     vgic_is_init = true;
 
@@ -394,7 +394,7 @@ u32 gic__get_fdt_irq_cpumask(struct kvm *kvm) {
 
 #define KVM_IRQCHIP_IRQ(x) (KVM_ARM_IRQ_TYPE_SPI << KVM_ARM_IRQ_TYPE_SHIFT) | ((x)&KVM_ARM_IRQ_NUM_MASK)
 
-void kvm__irq_line(struct kvm *kvm, int irq, int level) {
+void kvm_irq_line(struct kvm *kvm, int irq, int level) {
     struct kvm_irq_level irq_level = {
         .irq = KVM_IRQCHIP_IRQ(irq),
         .level = !!level,
@@ -406,9 +406,9 @@ void kvm__irq_line(struct kvm *kvm, int irq, int level) {
         pr_warning("Could not KVM_IRQ_LINE for irq %d", irq);
 }
 
-void kvm__irq_trigger(struct kvm *kvm, int irq) {
-    kvm__irq_line(kvm, irq, VIRTIO_IRQ_HIGH);
-    kvm__irq_line(kvm, irq, VIRTIO_IRQ_LOW);
+void kvm_irq_trigger(struct kvm *kvm, int irq) {
+    kvm_irq_line(kvm, irq, VIRTIO_IRQ_HIGH);
+    kvm_irq_line(kvm, irq, VIRTIO_IRQ_LOW);
 }
 
 int gic__add_irqfd(struct kvm *kvm, unsigned int gsi, int trigger_fd, int resample_fd) {

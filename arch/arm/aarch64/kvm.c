@@ -34,7 +34,7 @@ int vcpu_affinity_parser(const struct option *opt, const char *arg, int unset) {
     return 0;
 }
 
-void kvm__arch_validate_cfg(struct kvm *kvm) {
+void kvm_arch_validate_cfg(struct kvm *kvm) {
     if (kvm->cfg.ram_addr < ARM_MEMORY_AREA) {
         die("RAM address is below the I/O region ending at %luGB", ARM_MEMORY_AREA >> 30);
     }
@@ -44,7 +44,7 @@ void kvm__arch_validate_cfg(struct kvm *kvm) {
     }
 }
 
-u64 kvm__arch_default_ram_address(void) {
+u64 kvm_arch_default_ram_address(void) {
     return ARM_MEMORY_AREA;
 }
 
@@ -54,7 +54,7 @@ u64 kvm__arch_default_ram_address(void) {
  * instead of Little-Endian. BE kernels of this vintage may fail to
  * boot. See Documentation/arm64/booting.rst in your local kernel tree.
  */
-unsigned long long kvm__arch_get_kern_offset(struct kvm *kvm, int fd) {
+unsigned long long kvm_arch_get_kern_offset(struct kvm *kvm, int fd) {
     struct arm64_image_header header;
     off_t cur_offset;
     ssize_t size;
@@ -90,7 +90,7 @@ default_offset:
     return 0x80000;
 }
 
-int kvm__arch_get_ipa_limit(struct kvm *kvm) {
+int kvm_arch_get_ipa_limit(struct kvm *kvm) {
     int ret;
 
     ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_ARM_VM_IPA_SIZE);
@@ -100,12 +100,12 @@ int kvm__arch_get_ipa_limit(struct kvm *kvm) {
     return ret;
 }
 
-int kvm__get_vm_type(struct kvm *kvm) {
+int kvm_get_vm_type(struct kvm *kvm) {
     unsigned int ipa_bits, max_ipa_bits;
     unsigned long max_ipa;
 
     /* If we're running on an old kernel, use 0 as the VM type */
-    max_ipa_bits = kvm__arch_get_ipa_limit(kvm);
+    max_ipa_bits = kvm_arch_get_ipa_limit(kvm);
     if (!max_ipa_bits)
         return 0;
 
@@ -120,7 +120,7 @@ int kvm__get_vm_type(struct kvm *kvm) {
     return KVM_VM_TYPE_ARM_IPA_SIZE(ipa_bits);
 }
 
-void kvm__arch_enable_mte(struct kvm *kvm) {
+void kvm_arch_enable_mte(struct kvm *kvm) {
     struct kvm_enable_cap cap = {
         .cap = KVM_CAP_ARM_MTE,
     };
@@ -135,7 +135,7 @@ void kvm__arch_enable_mte(struct kvm *kvm) {
         return;
     }
 
-    if (!kvm__supports_extension(kvm, KVM_CAP_ARM_MTE)) {
+    if (!kvm_supports_extension(kvm, KVM_CAP_ARM_MTE)) {
         pr_debug("MTE capability not available");
         return;
     }
