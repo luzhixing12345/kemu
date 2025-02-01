@@ -22,6 +22,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <clib/clib.h>
 
 #ifdef __GNUC__
 #define NORETURN __attribute__((__noreturn__))
@@ -59,12 +60,12 @@ extern int loglevel;
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2 * !!(condition)]))
 
 #ifndef BUG_ON_HANDLER
-#define BUG_ON_HANDLER(condition)                       \
-    do {                                                \
-        if ((condition)) {                              \
-            pr_err("BUG at %s:%d", __FILE__, __LINE__); \
-            raise(SIGABRT);                             \
-        }                                               \
+#define BUG_ON_HANDLER(condition)                    \
+    do {                                             \
+        if ((condition)) {                           \
+            ERR("BUG at %s:%d", __FILE__, __LINE__); \
+            raise(SIGABRT);                          \
+        }                                            \
     } while (0)
 #endif
 

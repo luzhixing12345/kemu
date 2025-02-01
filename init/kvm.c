@@ -89,7 +89,7 @@ bool kvm_supports_vm_extension(struct kvm *kvm, unsigned int extension) {
 
     switch (supports_vm_ext_check) {
         case 0:
-            ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_CHECK_EXTENSION_VM);
+            ret = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_CHECK_EXTENSION_VM);
             if (ret <= 0) {
                 supports_vm_ext_check = -1;
                 return false;
@@ -112,7 +112,7 @@ bool kvm_supports_vm_extension(struct kvm *kvm, unsigned int extension) {
 bool kvm_supports_extension(struct kvm *kvm, unsigned int extension) {
     int ret;
 
-    ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, extension);
+    ret = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, extension);
     if (ret < 0)
         return false;
 
@@ -126,7 +126,7 @@ static int kvm_check_extensions(struct kvm *kvm) {
         if (!kvm_req_ext[i].name)
             break;
         if (!kvm_supports_extension(kvm, kvm_req_ext[i].code)) {
-            pr_err("Unsupported KVM extension detected: %s", kvm_req_ext[i].name);
+            ERR("Unsupported KVM extension detected: %s", kvm_req_ext[i].name);
             return -i;
         }
     }
@@ -140,7 +140,7 @@ struct kvm *kvm_new(void) {
         return ERR_PTR(-ENOMEM);
 
     mutex_init(&kvm->mem_banks_lock);
-    kvm->sys_fd = -1;
+    kvm->kvm_fd = -1;
     kvm->vm_fd = -1;
 
 #ifdef KVM_BRLOCK_DEBUG
@@ -173,13 +173,13 @@ int kvm_destroy_mem(struct kvm *kvm, u64 guest_phys, u64 size, void *userspace_a
                                                          bank->host_addr == userspace_addr) break;
 
     if (&bank->list == &kvm->mem_banks) {
-        pr_err("Region [%llx-%llx] not found", guest_phys, guest_phys + size - 1);
+        ERR("Region [%llx-%llx] not found", guest_phys, guest_phys + size - 1);
         ret = -EINVAL;
         goto out;
     }
 
     if (bank->type == KVM_MEM_TYPE_RESERVED) {
-        pr_err("Cannot delete reserved region [%llx-%llx]", guest_phys, guest_phys + size - 1);
+        ERR("Cannot delete reserved region [%llx-%llx]", guest_phys, guest_phys + size - 1);
         ret = -EINVAL;
         goto out;
     }
@@ -257,13 +257,13 @@ int kvm_register_mem(struct kvm *kvm, u64 guest_phys, u64 size, void *userspace_
             continue;
         }
 
-        pr_err("%s region [%llx-%llx] would overlap %s region [%llx-%llx]",
-               kvm_mem_type_to_string(type),
-               guest_phys,
-               guest_phys + size - 1,
-               kvm_mem_type_to_string(bank->type),
-               bank->guest_phys_addr,
-               bank->guest_phys_addr + bank->size - 1);
+        ERR("%s region [%llx-%llx] would overlap %s region [%llx-%llx]",
+            kvm_mem_type_to_string(type),
+            guest_phys,
+            guest_phys + size - 1,
+            kvm_mem_type_to_string(bank->type),
+            bank->guest_phys_addr,
+            bank->guest_phys_addr + bank->size - 1);
 
         ret = -EINVAL;
         goto out;
@@ -373,7 +373,7 @@ int kvm_for_each_mem_bank(struct kvm *kvm, enum kvm_mem_type type,
 int kvm_recommended_cpus(struct kvm *kvm) {
     int ret;
 
-    ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_NR_VCPUS);
+    ret = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_NR_VCPUS);
     if (ret <= 0)
         /*
          * api.txt states that if KVM_CAP_NR_VCPUS does not exist,
@@ -387,7 +387,7 @@ int kvm_recommended_cpus(struct kvm *kvm) {
 int kvm_max_cpus(struct kvm *kvm) {
     int ret;
 
-    ret = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_MAX_VCPUS);
+    ret = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_MAX_VCPUS);
     if (ret <= 0)
         ret = kvm_recommended_cpus(kvm);
 
@@ -402,47 +402,45 @@ int kvm_init(struct kvm *kvm) {
     int ret;
 
     if (!kvm_arch_cpu_supports_vm()) {
-        pr_err("Your CPU does not support hardware virtualization");
+        ERR("Your CPU does not support hardware virtualization");
         ret = -ENOSYS;
         goto err;
     }
 
-    kvm->sys_fd = open(kvm->cfg.dev, O_RDWR);
-    if (kvm->sys_fd < 0) {
+    kvm->kvm_fd = open(kvm->cfg.dev, O_RDWR);
+    if (kvm->kvm_fd < 0) {
         if (errno == ENOENT)
-            pr_err(
-                "'%s' not found. Please make sure your kernel has CONFIG_KVM "
+            ERR("'%s' not found. Please make sure your kernel has CONFIG_KVM "
                 "enabled and that the KVM modules are loaded.",
                 kvm->cfg.dev);
         else if (errno == ENODEV)
-            pr_err(
-                "'%s' KVM driver not available.\n  # (If the KVM "
+            ERR("'%s' KVM driver not available.\n  # (If the KVM "
                 "module is loaded then 'dmesg' may offer further clues "
                 "about the failure.)",
                 kvm->cfg.dev);
         else
-            pr_err("Could not open %s: ", kvm->cfg.dev);
+            ERR("Could not open %s: ", kvm->cfg.dev);
 
         ret = -errno;
         goto err_free;
     }
 
-    ret = ioctl(kvm->sys_fd, KVM_GET_API_VERSION, 0);
+    ret = ioctl(kvm->kvm_fd, KVM_GET_API_VERSION, 0);
     if (ret != KVM_API_VERSION) {
-        pr_err("KVM_API_VERSION ioctl");
+        ERR("KVM_API_VERSION ioctl");
         ret = -errno;
         goto err_sys_fd;
     }
 
-    kvm->vm_fd = ioctl(kvm->sys_fd, KVM_CREATE_VM, kvm_get_vm_type(kvm));
+    kvm->vm_fd = ioctl(kvm->kvm_fd, KVM_CREATE_VM, kvm_get_vm_type(kvm));
     if (kvm->vm_fd < 0) {
-        pr_err("KVM_CREATE_VM ioctl");
+        ERR("KVM_CREATE_VM ioctl");
         ret = kvm->vm_fd;
         goto err_sys_fd;
     }
 
     if (kvm_check_extensions(kvm)) {
-        pr_err("A required KVM extension is not supported by OS");
+        ERR("A required KVM extension is not supported by OS");
         ret = -ENOSYS;
         goto err_vm_fd;
     }
@@ -471,7 +469,7 @@ int kvm_init(struct kvm *kvm) {
 err_vm_fd:
     close(kvm->vm_fd);
 err_sys_fd:
-    close(kvm->sys_fd);
+    close(kvm->kvm_fd);
 err_free:
     free(kvm);
 err:

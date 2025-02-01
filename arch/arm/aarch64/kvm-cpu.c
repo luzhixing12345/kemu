@@ -197,7 +197,7 @@ static int vcpu_configure_sve(struct kvm_cpu *vcpu) {
     }
 
     if (ioctl(vcpu->vcpu_fd, KVM_ARM_VCPU_FINALIZE, &feature)) {
-        pr_err("KVM_ARM_VCPU_FINALIZE: %s", strerror(errno));
+        ERR("KVM_ARM_VCPU_FINALIZE: %s", strerror(errno));
         return -1;
     }
 

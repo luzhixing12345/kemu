@@ -20,7 +20,7 @@ static int vfio_device_pci_parser(const struct option *opt, char *arg, struct vf
         domain = 0;
         nr = sscanf(arg, "%2x:%2x.%1x", &bus, &devnr, &fn);
         if (nr < 3) {
-            pr_err("Invalid device identifier %s", arg);
+            ERR("Invalid device identifier %s", arg);
             return -EINVAL;
         }
     }
@@ -343,7 +343,7 @@ static int vfio_map_mem_bank(struct kvm *kvm, struct kvm_mem_bank *bank, void *d
     /* Map the guest memory for DMA (i.e. provide isolation) */
     if (ioctl(vfio_container, VFIO_IOMMU_MAP_DMA, &dma_map)) {
         ret = -errno;
-        pr_err("Failed to map 0x%llx -> 0x%llx (%llu) for DMA", dma_map.iova, dma_map.vaddr, dma_map.size);
+        ERR("Failed to map 0x%llx -> 0x%llx (%llu) for DMA", dma_map.iova, dma_map.vaddr, dma_map.size);
     }
 
     return ret;
@@ -423,22 +423,22 @@ static struct vfio_group *vfio_group_create(struct kvm *kvm, unsigned long id) {
 
     group->fd = open(group_node, O_RDWR);
     if (group->fd < 0) {
-        pr_err("Failed to open IOMMU group %s", group_node);
+        ERR("Failed to open IOMMU group %s", group_node);
         goto err_free_group;
     }
 
     if (ioctl(group->fd, VFIO_GROUP_GET_STATUS, &group_status)) {
-        pr_err("Failed to determine status of IOMMU group %lu", id);
+        ERR("Failed to determine status of IOMMU group %lu", id);
         goto err_close_group;
     }
 
     if (!(group_status.flags & VFIO_GROUP_FLAGS_VIABLE)) {
-        pr_err("IOMMU group %lu is not viable", id);
+        ERR("IOMMU group %lu is not viable", id);
         goto err_close_group;
     }
 
     if (ioctl(group->fd, VFIO_GROUP_SET_CONTAINER, &vfio_container)) {
-        pr_err("Failed to add IOMMU group %lu to VFIO container", id);
+        ERR("Failed to add IOMMU group %lu to VFIO container", id);
         goto err_close_group;
     }
 
@@ -559,19 +559,19 @@ static int vfio_container_init(struct kvm *kvm) {
     vfio_container = open(VFIO_DEV_NODE, O_RDWR);
     if (vfio_container == -1) {
         ret = errno;
-        pr_err("Failed to open %s", VFIO_DEV_NODE);
+        ERR("Failed to open %s", VFIO_DEV_NODE);
         return ret;
     }
 
     api = ioctl(vfio_container, VFIO_GET_API_VERSION);
     if (api != VFIO_API_VERSION) {
-        pr_err("Unknown VFIO API version %d", api);
+        ERR("Unknown VFIO API version %d", api);
         return -ENODEV;
     }
 
     iommu_type = vfio_get_iommu_type();
     if (iommu_type < 0) {
-        pr_err("VFIO type-1 IOMMU not supported on this platform");
+        ERR("VFIO type-1 IOMMU not supported on this platform");
         return iommu_type;
     }
 
@@ -587,7 +587,7 @@ static int vfio_container_init(struct kvm *kvm) {
     /* Finalise the container */
     if (ioctl(vfio_container, VFIO_SET_IOMMU, iommu_type)) {
         ret = -errno;
-        pr_err("Failed to set IOMMU type %d for VFIO container", iommu_type);
+        ERR("Failed to set IOMMU type %d for VFIO container", iommu_type);
         return ret;
     } else {
         pr_info("Using IOMMU type %d for VFIO container", iommu_type);

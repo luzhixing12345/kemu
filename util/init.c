@@ -3,6 +3,7 @@
 
 #include "kvm/kvm.h"
 #include "kvm/util-init.h"
+#include <clib/clib.h>
 
 #define PRIORITY_LISTS 10
 
@@ -31,9 +32,10 @@ int init_list__init(struct kvm *kvm) {
     struct init_item *t;
 
     for (i = 0; i < ARRAY_SIZE(init_lists); i++) hlist_for_each_entry(t, &init_lists[i], n) {
+            DEBUG("init: %s", t->fn_name);
             r = t->init(kvm);
             if (r < 0) {
-                pr_warning("Failed init: %s\n", t->fn_name);
+                ERR("Failed init: %s", t->fn_name);
                 goto fail;
             }
         }
@@ -50,7 +52,7 @@ int init_list__exit(struct kvm *kvm) {
     for (i = ARRAY_SIZE(exit_lists) - 1; i >= 0; i--) hlist_for_each_entry(t, &exit_lists[i], n) {
             r = t->init(kvm);
             if (r < 0) {
-                pr_warning("%s failed.\n", t->fn_name);
+                ERR("%s failed", t->fn_name);
                 goto fail;
             }
         }

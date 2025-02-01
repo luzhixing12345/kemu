@@ -97,7 +97,7 @@ int riscv__setup_irqfd_lines(struct kvm *kvm) {
     list_for_each_entry_safe(line, tmp, &irqfd_lines, list) {
         ret = irq__common_add_irqfd(kvm, line->gsi, line->trigger_fd, line->resample_fd);
         if (ret < 0) {
-            pr_err("Failed to register IRQFD");
+            ERR("Failed to register IRQFD");
             return ret;
         }
 

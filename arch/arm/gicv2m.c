@@ -85,7 +85,7 @@ static int gicv2m_signal_msi(struct kvm *kvm, struct kvm_msi *msi) {
     int spi = msi->data & GICV2M_SPI_MASK;
 
     if (spi < v2m.first_spi || spi >= v2m.first_spi + v2m.num_spis) {
-        pr_err("invalid SPI number %d", spi);
+        ERR("invalid SPI number %d", spi);
         return -EINVAL;
     }
 

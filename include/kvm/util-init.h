@@ -1,6 +1,8 @@
 #ifndef KVM__UTIL_INIT_H
 #define KVM__UTIL_INIT_H
 
+#include <linux/types.h>
+
 struct kvm;
 
 struct init_item {

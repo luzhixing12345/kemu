@@ -47,7 +47,7 @@ u64 get_ram_size(int nr_cpus) {
     return ram_size;
 }
 
-u64 calculate_ram_size(char *ram_size_str) {
+u64 parse_ram_size(char *ram_size_str) {
     u64 ram_size = 0;
     char unit = '\0';
     int num_converted = 0;
@@ -84,7 +84,5 @@ u64 calculate_ram_size(char *ram_size_str) {
             // Invalid unit, return 0
             return 0;
     }
-    DEBUG("ram_size: %llu", ram_size);
-
     return ram_size;
 }

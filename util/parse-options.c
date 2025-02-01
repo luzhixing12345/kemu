@@ -15,11 +15,11 @@
 
 static int opterror(const struct option *opt, const char *reason, int flags) {
     if (flags & OPT_SHORT)
-        pr_err("switch `%c' %s", opt->short_name, reason);
+        ERR("switch `%c' %s", opt->short_name, reason);
     else if (flags & OPT_UNSET)
-        pr_err("option `no-%s' %s", opt->long_name, reason);
+        ERR("option `no-%s' %s", opt->long_name, reason);
     else
-        pr_err("option `%s' %s", opt->long_name, reason);
+        ERR("option `%s' %s", opt->long_name, reason);
 
     return -1;
 }
@@ -309,7 +309,7 @@ static void check_typos(const char *arg, const struct option *options) {
         return;
 
     if (!prefixcmp(arg, "no-")) {
-        pr_err("did you mean `--%s` (with two dashes ?)", arg);
+        ERR("did you mean `--%s` (with two dashes ?)", arg);
         exit(129);
     }
 
@@ -317,7 +317,7 @@ static void check_typos(const char *arg, const struct option *options) {
         if (!options->long_name)
             continue;
         if (!prefixcmp(options->long_name, arg)) {
-            pr_err("did you mean `--%s` (with two dashes ?)", arg);
+            ERR("did you mean `--%s` (with two dashes ?)", arg);
             exit(129);
         }
     }
@@ -408,12 +408,12 @@ static int parse_long_opt(struct parse_opt_ctx_t *p, const char *arg, const stru
     }
 
     if (ambiguous_option) {
-        pr_err("Ambiguous option: %s (could be --%s%s or --%s%s)",
-               arg,
-               (ambiguous_flags & OPT_UNSET) ? "no-" : "",
-               ambiguous_option->long_name,
-               (abbrev_flags & OPT_UNSET) ? "no-" : "",
-               abbrev_option->long_name);
+        ERR("Ambiguous option: %s (could be --%s%s or --%s%s)",
+            arg,
+            (ambiguous_flags & OPT_UNSET) ? "no-" : "",
+            ambiguous_option->long_name,
+            (abbrev_flags & OPT_UNSET) ? "no-" : "",
+            abbrev_option->long_name);
         return -1;
     }
     if (abbrev_option)
@@ -532,9 +532,9 @@ int parse_options(int argc, const char **argv, const struct option *options, con
             break;
         default: /* PARSE_OPT_UNKNOWN */
             if (ctx.argv[0][1] == '-') {
-                pr_err("unknown option `%s'", ctx.argv[0] + 2);
+                ERR("unknown option `%s'", ctx.argv[0] + 2);
             } else {
-                pr_err("unknown switch `%c'", *ctx.opt);
+                ERR("unknown switch `%c'", *ctx.opt);
             }
             usage_with_options(usagestr, options);
     }

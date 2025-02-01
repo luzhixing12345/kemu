@@ -525,7 +525,7 @@ static void virtio_net_update_endian(struct net_dev *ndev) {
 
         ioctl(ndev->tap_fd, disable_req, &disable_val);
         if (ioctl(ndev->tap_fd, enable_req, &enable_val) < 0)
-            pr_err("Config tap device TUNSETVNETLE/BE error");
+            ERR("Config tap device TUNSETVNETLE/BE error");
     }
 }
 

@@ -454,14 +454,14 @@ int kvm_ipc__init(struct kvm *kvm) {
 
     ret = epoll__init(kvm, &epoll, "kvm-ipc", kvm_ipc__handle_event);
     if (ret) {
-        pr_err("Failed starting IPC thread");
+        ERR("Failed starting IPC thread");
         goto err;
     }
 
     ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = sock;
     if (epoll_ctl(epoll.fd, EPOLL_CTL_ADD, sock, &ev) < 0) {
-        pr_err("Failed adding socket to epoll");
+        ERR("Failed adding socket to epoll");
         ret = -EFAULT;
         goto err_epoll;
     }

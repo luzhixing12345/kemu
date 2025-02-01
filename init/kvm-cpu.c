@@ -32,12 +32,12 @@ void *kvm_cpu_thread(void *arg) {
     return (void *)(intptr_t)0;
 
 panic_kvm:
-    pr_err("KVM exit reason: %u (\"%s\")",
-           current_kvm_cpu->kvm_run->exit_reason,
-           kvm_exit_reasons[current_kvm_cpu->kvm_run->exit_reason]);
+    ERR("KVM exit reason: %u (\"%s\")",
+        current_kvm_cpu->kvm_run->exit_reason,
+        kvm_exit_reasons[current_kvm_cpu->kvm_run->exit_reason]);
 
     if (current_kvm_cpu->kvm_run->exit_reason == KVM_EXIT_UNKNOWN) {
-        pr_err("KVM exit code: %llu", (unsigned long long)current_kvm_cpu->kvm_run->hw.hardware_exit_reason);
+        ERR("KVM exit code: %llu", (unsigned long long)current_kvm_cpu->kvm_run->hw.hardware_exit_reason);
     }
 
     kvm_cpu__set_debug_fd(STDOUT_FILENO);
@@ -290,21 +290,21 @@ int kvm_cpu__init(struct kvm *kvm) {
 
     task_eventfd = eventfd(0, 0);
     if (task_eventfd < 0) {
-        pr_err("Couldn't create task_eventfd");
+        ERR("Couldn't create task_eventfd");
         return task_eventfd;
     }
 
     /* Alloc one pointer too many, so array ends up 0-terminated */
     kvm->cpus = calloc(kvm->nrcpus + 1, sizeof(void *));
     if (!kvm->cpus) {
-        pr_err("Couldn't allocate array for %d CPUs", kvm->nrcpus);
+        ERR("Couldn't allocate array for %d CPUs", kvm->nrcpus);
         return -ENOMEM;
     }
 
     for (i = 0; i < kvm->nrcpus; i++) {
         kvm->cpus[i] = kvm_cpu__arch_init(kvm, i);
         if (!kvm->cpus[i]) {
-            pr_err("unable to initialize KVM VCPU");
+            ERR("unable to initialize KVM VCPU");
             goto fail_alloc;
         }
     }

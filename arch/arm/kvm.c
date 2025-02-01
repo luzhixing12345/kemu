@@ -166,8 +166,7 @@ static bool validate_fw_addr(struct kvm *kvm, u64 fw_addr) {
     ram_phys = host_to_guest_flat(kvm, kvm->ram_start);
 
     if (fw_addr < ram_phys || fw_addr >= ram_phys + kvm->ram_size) {
-        pr_err(
-            "Provide --firmware-address an address in RAM: "
+        ERR("Provide --firmware-address an address in RAM: "
             "0x%016llx - 0x%016llx",
             ram_phys,
             ram_phys + kvm->ram_size);

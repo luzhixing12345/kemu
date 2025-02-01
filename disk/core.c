@@ -119,11 +119,11 @@ static int disk_image_open(struct disk_image *disk) {
         r = blkdev_probe(disk, fd, true);
     } else if (is_qcow(fd)) {
         /* qcow image ?*/
-        DEBUG("open qcow %s", disk_path);
+        DEBUG("open qcow disk %s", disk_path);
         r = qcow_probe(disk, fd, true);
     } else {
         /* raw image ?*/
-        DEBUG("open raw %s", disk_path);
+        DEBUG("open raw disk %s", disk_path);
         r = raw_image_probe(disk, fd, &st, readonly);
     }
     return r;
@@ -133,7 +133,6 @@ static int disk_image_open_all(struct kvm *kvm) {
     struct disk_image *disks = kvm->disks;
 
     for (int i = 0; i < kvm->nr_disks; i++) {
-        DEBUG("open disk %s", disks[i].disk_path);
         if (disk_image_open(&disks[i]) < 0) {
             goto error;
         }

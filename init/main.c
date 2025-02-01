@@ -23,7 +23,7 @@ int main(int argc, const char **argv) {
         ARG_STR(&kemu_vm.cfg.guest_name, NULL, "--name", "guest vm name", " <name>", "name"),
         ARG_STR(&kemu_vm.cfg.kernel_path, NULL, "--kernel", "kernel binary path", " <bzImage>", "kernel"),
         ARG_STR(&kemu_vm.cfg.kernel_cmdline, NULL, "--append", "kernel cmdline", " <cmdline>", NULL),
-        ARG_STR(&kemu_vm.cfg.ram_size, "-m", NULL, "memory size", " <memory-size>", "memory"),
+        ARG_STR(&kemu_vm.cfg.ram_size_str, "-m", NULL, "memory size", " <memory-size>", "memory"),
         ARG_INT(&kemu_vm.cfg.nrcpus, NULL, "--smp", "cpu number", " <cpus>", "cpu"),
         // storage options
         ARG_STR(&kemu_vm.cfg.disk_path, NULL, "--disk", "disk path", " <disk>", "disk"),

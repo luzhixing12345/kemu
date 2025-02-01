@@ -96,7 +96,7 @@ struct kvm_cpu *kvm_cpu__arch_init(struct kvm *kvm, unsigned long cpu_id) {
     if (vcpu->vcpu_fd < 0)
         die_perror("KVM_CREATE_VCPU ioctl");
 
-    mmap_size = ioctl(vcpu->kvm->sys_fd, KVM_GET_VCPU_MMAP_SIZE, 0);
+    mmap_size = ioctl(vcpu->kvm->kvm_fd, KVM_GET_VCPU_MMAP_SIZE, 0);
     if (mmap_size < 0)
         die_perror("KVM_GET_VCPU_MMAP_SIZE ioctl");
 
@@ -104,7 +104,7 @@ struct kvm_cpu *kvm_cpu__arch_init(struct kvm *kvm, unsigned long cpu_id) {
     if (vcpu->kvm_run == MAP_FAILED)
         die("unable to mmap vcpu fd");
 
-    coalesced_offset = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION, KVM_CAP_COALESCED_MMIO);
+    coalesced_offset = ioctl(kvm->kvm_fd, KVM_CHECK_EXTENSION, KVM_CAP_COALESCED_MMIO);
     if (coalesced_offset)
         vcpu->ring = (void *)vcpu->kvm_run + (coalesced_offset * PAGE_SIZE);
 

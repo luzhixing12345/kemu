@@ -281,7 +281,7 @@ int kvm_gtk_init(struct kvm *kvm) {
 
     fb = vesa__init(kvm);
     if (IS_ERR(fb)) {
-        pr_err("vesa__init() failed with error %ld\n", PTR_ERR(fb));
+        ERR("vesa__init() failed with error %ld\n", PTR_ERR(fb));
         return PTR_ERR(fb);
     }
 

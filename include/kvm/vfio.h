@@ -7,7 +7,7 @@
 #include "kvm/parse-options.h"
 #include "kvm/pci.h"
 
-#define vfio_dev_err(vdev, fmt, ...)  pr_err("%s: " fmt, (vdev)->params->name, ##__VA_ARGS__)
+#define vfio_dev_err(vdev, fmt, ...)  ERR("%s: " fmt, (vdev)->params->name, ##__VA_ARGS__)
 #define vfio_dev_warn(vdev, fmt, ...) pr_warning("%s: " fmt, (vdev)->params->name, ##__VA_ARGS__)
 #define vfio_dev_info(vdev, fmt, ...) pr_info("%s: " fmt, (vdev)->params->name, ##__VA_ARGS__)
 #define vfio_dev_dbg(vdev, fmt, ...)  pr_debug("%s: " fmt, (vdev)->params->name, ##__VA_ARGS__)

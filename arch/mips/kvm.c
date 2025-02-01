@@ -324,7 +324,7 @@ static bool load_elf_binary(struct kvm *kvm, int fd_kernel) {
 
 bool kvm_arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd, const char *kernel_cmdline) {
     if (fd_initrd != -1) {
-        pr_err("Initrd not supported on MIPS.");
+        ERR("Initrd not supported on MIPS.");
         return false;
     }
 

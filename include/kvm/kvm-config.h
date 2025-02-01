@@ -26,8 +26,10 @@ struct kvm_config {
     struct vfio_device_params *vfio_devices;
     char *rootfs_path;         // /tmp/kemu/{vm_name}
     char *rootfs_socket_path;  // /tmp/kemu/{vm_name}/ipc.sock
+    // memory
     u64 ram_addr;              /* Guest memory physical base address, in bytes */
     u64 ram_size;              /* Guest memory size, in bytes */
+    char *ram_size_str;
     u8 num_net_devices;
     u8 num_vfio_devices;
     u64 vsock_cid;

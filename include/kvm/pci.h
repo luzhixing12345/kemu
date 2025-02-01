@@ -14,7 +14,7 @@
 #include "kvm/msi.h"
 
 #define pci_dev_err(pci_hdr, fmt, ...) \
-    pr_err("[%04x:%04x] " fmt, (pci_hdr)->vendor_id, (pci_hdr)->device_id, ##__VA_ARGS__)
+    ERR("[%04x:%04x] " fmt, (pci_hdr)->vendor_id, (pci_hdr)->device_id, ##__VA_ARGS__)
 #define pci_dev_warn(pci_hdr, fmt, ...) \
     pr_warning("[%04x:%04x] " fmt, (pci_hdr)->vendor_id, (pci_hdr)->device_id, ##__VA_ARGS__)
 #define pci_dev_info(pci_hdr, fmt, ...) \

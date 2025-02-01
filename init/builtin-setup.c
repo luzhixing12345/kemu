@@ -253,7 +253,7 @@ int kvm_cmd_setup(int argc, const char **argv, const char *prefix) {
         pr_info("You can now start it by running the following command:");
         pr_info("%s run -d %s", KVM_BINARY_NAME, instance_name);
     } else {
-        pr_err("Unable to create rootfs in %s%s: %s", kvm_get_dir(), instance_name, strerror(errno));
+        ERR("Unable to create rootfs in %s%s: %s", kvm_get_dir(), instance_name, strerror(errno));
     }
 
     return r;

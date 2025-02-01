@@ -615,7 +615,7 @@ static ssize_t vfio_pci_cap_size(struct pci_cap_hdr *cap_hdr) {
              */
             return PCI_CAP_EXP_RC_ENDPOINT_SIZEOF_V1;
         default:
-            pr_err("unknown PCI capability 0x%x", cap_hdr->type);
+            ERR("unknown PCI capability 0x%x", cap_hdr->type);
             return 0;
     }
 }
@@ -885,7 +885,7 @@ static int vfio_pci_create_msix_table(struct kvm *kvm, struct vfio_device *vdev)
     map_size = ALIGN(info.size, MAX_PAGE_SIZE);
     table->guest_phys_addr = pci_get_mmio_block(map_size);
     if (!table->guest_phys_addr) {
-        pr_err("cannot allocate MMIO space");
+        ERR("cannot allocate MMIO space");
         ret = -ENOMEM;
         goto out_free;
     }
@@ -917,7 +917,7 @@ static int vfio_pci_create_msix_table(struct kvm *kvm, struct vfio_device *vdev)
         map_size = ALIGN(info.size, MAX_PAGE_SIZE);
         pba->guest_phys_addr = pci_get_mmio_block(map_size);
         if (!pba->guest_phys_addr) {
-            pr_err("cannot allocate MMIO space");
+            ERR("cannot allocate MMIO space");
             ret = -ENOMEM;
             goto out_free;
         }

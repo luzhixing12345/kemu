@@ -244,7 +244,7 @@ int mptable__init(struct kvm *kvm) {
 
     if (size > (unsigned long)(MB_BIOS_END - bios_rom_size) || size > MPTABLE_MAX_SIZE) {
         free(mpc_table);
-        pr_err("MP table is too big");
+        ERR("MP table is too big");
 
         return -E2BIG;
     }

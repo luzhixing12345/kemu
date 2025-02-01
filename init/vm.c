@@ -18,7 +18,6 @@ int vm_validate_cfg(struct kvm_config *config) {
         ERR("kernel path is not set\n");
         return -EINVAL;
     }
-
     return 0;
 }
 
@@ -99,25 +98,12 @@ int vm_config_init(struct kvm *kvm) {
         config->nrcpus = nr_online_cpus;
     }
 
-    // if (!kvm->cfg.kernel_filename && !kvm->cfg.firmware_filename) {
-    // 	kvm->cfg.kernel_filename = find_kernel();
-
-    // 	if (!kvm->cfg.kernel_filename) {
-    // 		kernel_usage_with_options();
-    // 		return ERR_PTR(-EINVAL);
-    // 	}
-    // }
-
-    // if (kvm->cfg.kernel_filename) {
-    // 	kvm->cfg.vmlinux_filename = find_vmlinux();
-    // 	kvm->vmlinux = kvm->cfg.vmlinux_filename;
-    // }
-
-    // if (kvm->cfg.nrcpus == 0)
-    // 	kvm->cfg.nrcpus = nr_online_cpus;
-
-    if (!kvm->cfg.ram_size)
+    if (!kvm->cfg.ram_size_str) {
         kvm->cfg.ram_size = get_ram_size(kvm->cfg.nrcpus);
+    } else {
+        kvm->cfg.ram_size = parse_ram_size(kvm->cfg.ram_size_str);
+    }
+    DEBUG("ram size: %llu GB", kvm->cfg.ram_size / GB);
 
     if (!kvm->cfg.dev)
         kvm->cfg.dev = DEFAULT_KVM_DEV;
@@ -153,55 +139,15 @@ int vm_config_init(struct kvm *kvm) {
         kvm->cfg.network = DEFAULT_NETWORK;
 
     if (!kvm->cfg.guest_name) {
-        if (kvm->cfg.custom_rootfs) {
-            kvm->cfg.guest_name = kvm->cfg.custom_rootfs_name;
-        } else {
-            static char default_name[20];
-            sprintf(default_name, "guest-%u", getpid());
-            kvm->cfg.guest_name = default_name;
-        }
+        static char default_name[20];
+        sprintf(default_name, "guest-%u", getpid());
+        kvm->cfg.guest_name = default_name;
     }
+    DEBUG("vm guest name: %s", kvm->cfg.guest_name);
 
-    // if (!kvm->cfg.nodefaults &&
-    //     !kvm->cfg.using_rootfs &&
-    //     !kvm->cfg.disk_image[0].filename &&
-    //     !kvm->cfg.initrd_filename) {
-    // 	char tmp[PATH_MAX];
+    get_kernel_real_cmdline(kvm);
 
-    // 	kvm_setup_create_new(kvm->cfg.custom_rootfs_name);
-    // 	kvm_setup_resolv(kvm->cfg.custom_rootfs_name);
-
-    // 	snprintf(tmp, PATH_MAX, "%s%s", kvm_get_dir(), "default");
-    // 	if (virtio_9p__register(kvm, tmp, "/dev/root") < 0)
-    // 		die("Unable to initialize virtio 9p");
-    // 	if (virtio_9p__register(kvm, "/", "hostfs") < 0)
-    // 		die("Unable to initialize virtio 9p");
-    // 	kvm->cfg.using_rootfs = kvm->cfg.custom_rootfs = 1;
-    // }
-
-    // if (kvm->cfg.custom_rootfs) {
-    // 	kvm_run_set_sandbox(kvm);
-    // 	if (kvm_setup_guest_init(kvm->cfg.custom_rootfs_name))
-    // 		die("Failed to setup init for guest.");
-    // }
-
-    if (kvm->cfg.nodefaults)
-        kvm->cfg.real_cmdline = kvm->cfg.kernel_cmdline;
-    else
-        get_kernel_real_cmdline(kvm);
-
-    // if (kvm->cfg.kernel_filename) {
-    // 	pr_info("# %s run -k %s -m %Lu -c %d --name %s", KVM_BINARY_NAME,
-    // 		kvm->cfg.kernel_filename,
-    // 		(unsigned long long)kvm->cfg.ram_size >> MB_SHIFT,
-    // 		kvm->cfg.nrcpus, kvm->cfg.guest_name);
-    // } else if (kvm->cfg.firmware_filename) {
-    // 	pr_info("# %s run --firmware %s -m %Lu -c %d --name %s", KVM_BINARY_NAME,
-    // 		kvm->cfg.firmware_filename,
-    // 		(unsigned long long)kvm->cfg.ram_size >> MB_SHIFT,
-    // 		kvm->cfg.nrcpus, kvm->cfg.guest_name);
-    // }
-
+    // disk
     kvm->nr_disks = 0;
     kvm->disks = NULL;
     if (kvm->cfg.disk_path) {
@@ -229,6 +175,7 @@ int vm_rootfs_init(struct kvm *kvm) {
             ERR("failed to create rootfs %s\n", DEFAULT_ROOTFS_PATH);
             return -1;
         }
+        INFO("init kemu base rootfs %s", DEFAULT_ROOTFS_PATH);
     }
 
     // check if the rootfs exists, delete it if it does
@@ -260,10 +207,10 @@ int vm_rootfs_exit(struct kvm *kvm) {
 }
 
 int vm_run(struct kvm *kvm) {
+    INFO("creating %u VCPU threads...", kvm->nrcpus);
     for (int i = 0; i < kvm->nrcpus; i++) {
         if (pthread_create(&kvm->cpus[i]->thread, NULL, kvm_cpu_thread, kvm->cpus[i]) != 0)
             ERR("unable to create KVM VCPU thread");
-        DEBUG("vcpu %d created", i);
     }
 
     /* Only VCPU #0 is going to exit by itself when shutting down */

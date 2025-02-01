@@ -72,7 +72,7 @@ struct kvm_mem_bank {
 struct kvm {
     struct kvm_arch arch;
     struct kvm_config cfg;
-    int sys_fd;      /* For system ioctls(), i.e. /dev/kvm */
+    int kvm_fd;      /* For system ioctls(), i.e. /dev/kvm */
     int vm_fd;       /* For VM ioctls() */
     timer_t timerid; /* Posix timer for interrupts */
 

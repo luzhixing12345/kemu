@@ -40,7 +40,7 @@ int irqchip_parser(const struct option *opt, const char *arg, int unset) {
     } else if (!strcmp(arg, "gicv3-its")) {
         *type = IRQCHIP_GICV3_ITS;
     } else {
-        pr_err("irqchip: unknown type \"%s\"\n", arg);
+        ERR("irqchip: unknown type \"%s\"\n", arg);
         return -1;
     }
 
@@ -54,7 +54,7 @@ static int irq__setup_irqfd_lines(struct kvm *kvm) {
     list_for_each_entry_safe(line, tmp, &irqfd_lines, list) {
         ret = irq__common_add_irqfd(kvm, line->gsi, line->trigger_fd, line->resample_fd);
         if (ret < 0) {
-            pr_err("Failed to register IRQFD");
+            ERR("Failed to register IRQFD");
             return ret;
         }
 
@@ -109,8 +109,8 @@ static int gic__create_its_frame(struct kvm *kvm, u64 its_frame_addr) {
 
     err = ioctl(kvm->vm_fd, KVM_CREATE_DEVICE, &its_device);
     if (err) {
-        pr_err("GICv3 ITS requested, but kernel does not support it.");
-        pr_err("Try --irqchip=gicv3 instead");
+        ERR("GICv3 ITS requested, but kernel does not support it.");
+        ERR("Try --irqchip=gicv3 instead");
         return err;
     }
 

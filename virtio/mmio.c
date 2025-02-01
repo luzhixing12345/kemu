@@ -78,7 +78,7 @@ int virtio_mmio_init_vq(struct kvm *kvm, struct virtio_device *vdev, int vq) {
 
     ret = virtio_mmio_init_ioeventfd(vmmio->kvm, vdev, vq);
     if (ret) {
-        pr_err("couldn't add ioeventfd for vq %d: %d", vq, ret);
+        ERR("couldn't add ioeventfd for vq %d: %d", vq, ret);
         return ret;
     }
     return vdev->ops->init_vq(vmmio->kvm, vmmio->dev, vq);

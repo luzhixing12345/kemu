@@ -35,7 +35,7 @@ int virtio_transport_parser(const struct option *opt, const char *arg, int unset
             *type = VIRTIO_MMIO_LEGACY;
 #endif
         } else {
-            pr_err("virtio-transport: unknown type \"%s\"\n", arg);
+            ERR("virtio-transport: unknown type \"%s\"\n", arg);
             return -1;
         }
     } else if (!strcmp(opt->long_name, "virtio-legacy")) {
