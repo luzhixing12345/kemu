@@ -2,6 +2,8 @@
 
 kemu is a lightweight hypervisor for hosting KVM guests
 
+![sdzklj](https://raw.githubusercontent.com/learner-lu/picbed/master/sdzklj.gif)
+
 ## build
 
 no special dependence
