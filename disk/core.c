@@ -12,45 +12,45 @@ int debug_iodelay;
 
 static int disk_image_close(struct disk_image *disk);
 
-int disk_img_name_parser(const struct option *opt, const char *arg, int unset) {
-    const char *cur;
-    char *sep;
-    struct kvm *kvm = opt->ptr;
+// int disk_img_name_parser(const struct option *opt, const char *arg, int unset) {
+//     const char *cur;
+//     char *sep;
+//     struct kvm *kvm = opt->ptr;
 
-    if (kvm->nr_disks >= MAX_DISK_IMAGES)
-        die("Currently only 4 images are supported");
+//     if (kvm->nr_disks >= MAX_DISK_IMAGES)
+//         die("Currently only 4 images are supported");
 
-    kvm->cfg.disk_image[kvm->nr_disks].filename = arg;
-    cur = arg;
+//     kvm->cfg.disk_image[kvm->nr_disks].filename = arg;
+//     cur = arg;
 
-    if (strncmp(arg, "scsi:", 5) == 0) {
-        sep = strstr(arg, ":");
-        kvm->cfg.disk_image[kvm->nr_disks].wwpn = sep + 1;
+//     if (strncmp(arg, "scsi:", 5) == 0) {
+//         sep = strstr(arg, ":");
+//         kvm->cfg.disk_image[kvm->nr_disks].wwpn = sep + 1;
 
-        /* Old invocation had two parameters. Ignore the second one. */
-        sep = strstr(sep + 1, ":");
-        if (sep) {
-            *sep = 0;
-            cur = sep + 1;
-        }
-    }
+//         /* Old invocation had two parameters. Ignore the second one. */
+//         sep = strstr(sep + 1, ":");
+//         if (sep) {
+//             *sep = 0;
+//             cur = sep + 1;
+//         }
+//     }
 
-    do {
-        sep = strstr(cur, ",");
-        if (sep) {
-            if (strncmp(sep + 1, "ro", 2) == 0)
-                kvm->cfg.disk_image[kvm->nr_disks].readonly = true;
-            else if (strncmp(sep + 1, "direct", 6) == 0)
-                kvm->cfg.disk_image[kvm->nr_disks].direct = true;
-            *sep = 0;
-            cur = sep + 1;
-        }
-    } while (sep);
+//     do {
+//         sep = strstr(cur, ",");
+//         if (sep) {
+//             if (strncmp(sep + 1, "ro", 2) == 0)
+//                 kvm->cfg.disk_image[kvm->nr_disks].readonly = true;
+//             else if (strncmp(sep + 1, "direct", 6) == 0)
+//                 kvm->cfg.disk_image[kvm->nr_disks].direct = true;
+//             *sep = 0;
+//             cur = sep + 1;
+//         }
+//     } while (sep);
 
-    kvm->nr_disks++;
+//     kvm->nr_disks++;
 
-    return 0;
-}
+//     return 0;
+// }
 
 int disk_image_new(struct disk_image *disk, int fd, u64 size, struct disk_image_operations *ops, int use_mmap) {
     int r;

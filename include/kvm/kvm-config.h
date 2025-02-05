@@ -22,13 +22,10 @@
 
 struct kvm_config {
     struct kvm_config_arch arch;
-    struct disk_image_params disk_image[MAX_DISK_IMAGES];
     struct vfio_device_params *vfio_devices;
-    char *rootfs_path;         // /tmp/kemu/{vm_name}
-    char *rootfs_socket_path;  // /tmp/kemu/{vm_name}/ipc.sock
     // memory
-    u64 ram_addr;              /* Guest memory physical base address, in bytes */
-    u64 ram_size;              /* Guest memory size, in bytes */
+    u64 ram_addr; /* Guest memory physical base address, in bytes */
+    u64 ram_size; /* Guest memory size, in bytes */
     char *ram_size_str;
     u8 num_net_devices;
     u8 num_vfio_devices;
@@ -39,26 +36,33 @@ struct kvm_config {
     int debug_iodelay;
     int nrcpus;
     const char *disk_path;
-    const char *kernel_cmdline;
+    // kernel
     const char *kernel_path;
+    const char *kernel_cmdline;
+    const char *real_cmdline;
     const char *vmlinux_filename;
     const char *initrd_filename;
     const char *firmware_filename;
     const char *flash_filename;
     const char *console;
     const char *dev;
+    // network
     const char *network;
     const char *host_ip;
     const char *guest_ip;
     const char *guest_mac;
     const char *host_mac;
     const char *script;
-    const char *guest_name;
+    const char *guest_name;  // default {PID}
+    // socket
+    char *rootfs_path;         // /tmp/kemu/{guest_name}
+    char *rootfs_socket_path;  // /tmp/kemu/{guest_name}/ipc.sock
     const char *sandbox;
     const char *hugetlbfs_path;
     const char *custom_rootfs_name;
-    const char *real_cmdline;
     struct virtio_net_params *net_params;
+    // misc
+    time_t create_time;
     bool single_step;
     bool vnc;
     bool gtk;

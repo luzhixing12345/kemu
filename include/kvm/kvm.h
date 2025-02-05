@@ -154,7 +154,7 @@ static inline bool kvm_deregister_pio(struct kvm *kvm, u16 port) {
     return kvm_deregister_iotrap(kvm, port, DEVICE_BUS_IOPORT);
 }
 
-void kvm_reboot(struct kvm *kvm);
+void kvm_vm_exit(struct kvm *kvm);
 void kvm_pause(struct kvm *kvm);
 void kvm_continue(struct kvm *kvm);
 void kvm_notify_paused(void);

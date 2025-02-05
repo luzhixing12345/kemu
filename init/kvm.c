@@ -532,7 +532,7 @@ void kvm_dump_mem(struct kvm *kvm, unsigned long addr, unsigned long size, int d
     }
 }
 
-void kvm_reboot(struct kvm *kvm) {
+void kvm_vm_exit(struct kvm *kvm) {
     /* Check if the guest is running */
     if (!kvm->cpus[0] || kvm->cpus[0]->thread == 0)
         return;

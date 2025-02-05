@@ -14,6 +14,7 @@
 #include "kvm/kvm.h"
 #include "kvm/read-write.h"
 #include "kvm/util.h"
+#include "monitor.h"
 
 #define TERM_FD_IN  0
 #define TERM_FD_OUT 1
@@ -27,26 +28,55 @@ static pthread_t term_poll_thread;
 /* ctrl-a is used for escape */
 #define term_escape_char 0x01
 
+static bool term_in_escape = false;
+static bool term_in_monitor = false;
+
+// return 0 if continue, -1 if not char
+// c may be changed
+static int term_monitor_check(struct kvm *kvm, int term, unsigned char *c) {
+    if (term_in_escape) {
+        term_in_escape = false;
+        // ctrl-a + x: exit vm
+        if (*c == 'x') {
+            kvm_vm_exit(kvm);
+        } else if (*c == 'c') {
+            if (!term_in_monitor) {
+                term_in_monitor = true;
+                monitor_start(kvm, term);
+                return -1;
+            } else {
+                // end monitor
+                term_in_monitor = false;
+                monitor_end(kvm, term);
+                *c = KEY_ENTER;
+                return 0;
+            }
+        }
+        if (*c == term_escape_char)
+            return 0;
+    }
+
+    if (*c == term_escape_char) {
+        term_in_escape = true;
+        return -1;
+    }
+
+    if (term_in_monitor) {
+        monitor_add_cmdchar(*c, term);
+        return -1;
+    }
+
+    return 0;
+}
+
 int term_getc(struct kvm *kvm, int term) {
-    static bool term_got_escape = false;
     unsigned char c;
 
     if (read_in_full(term_fds[term][TERM_FD_IN], &c, 1) < 0)
         return -1;
 
-    if (term_got_escape) {
-        term_got_escape = false;
-        if (c == 'x')
-            kvm_reboot(kvm);
-        if (c == term_escape_char)
-            return c;
-    }
-
-    if (c == term_escape_char) {
-        term_got_escape = true;
+    if (term_monitor_check(kvm, term, &c) == -1)
         return -1;
-    }
-
     return c;
 }
 
@@ -145,7 +175,7 @@ static void term_set_tty(int term) {
 
     close(slave);
 
-    pr_info("Assigned terminal %d to pty %s\n", term, new_pty);
+    DEBUG("Assigned terminal %d to pty %s\n", term, new_pty);
 
     term_fds[term][TERM_FD_IN] = term_fds[term][TERM_FD_OUT] = master;
 }

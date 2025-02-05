@@ -15,7 +15,7 @@ __thread struct kvm_cpu *current_kvm_cpu;
 
 int vm_validate_cfg(struct kvm_config *config) {
     if (!config->kernel_path) {
-        ERR("kernel path is not set\n");
+        ERR("kernel path is not set");
         return -EINVAL;
     }
     return 0;
@@ -140,11 +140,18 @@ int vm_config_init(struct kvm *kvm) {
 
     if (!kvm->cfg.guest_name) {
         static char default_name[20];
-        sprintf(default_name, "guest-%u", getpid());
+        sprintf(default_name, "%u", getpid());
         kvm->cfg.guest_name = default_name;
     }
     DEBUG("vm guest name: %s", kvm->cfg.guest_name);
 
+    config->create_time = time(NULL);
+    // show time in human readable format
+    char time_str[32];
+    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", localtime(&config->create_time));
+    DEBUG("vm create time: %s", time_str);
+
+    // kernel
     get_kernel_real_cmdline(kvm);
 
     // disk

@@ -160,7 +160,7 @@ static void kbd_write_command(struct kvm *kvm, u8 val) {
             state.mode &= ~MODE_DISABLE_AUX;
             break;
         case I8042_CMD_SYSTEM_RESET:
-            kvm_reboot(kvm);
+            kvm_vm_exit(kvm);
             break;
         default:
             break;

@@ -340,7 +340,7 @@ static void handle_stop(struct kvm *kvm, int fd, u32 type, u32 len, u8 *msg) {
     if (WARN_ON(type != KVM_IPC_STOP || len))
         return;
 
-    kvm_reboot(kvm);
+    kvm_vm_exit(kvm);
 }
 
 /* Pause/resume the guest using SIGUSR2 */
