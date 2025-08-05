@@ -6,10 +6,6 @@
 
 int prefixcmp(const char *str, const char *prefix);
 
-#ifndef HAVE_STRLCPY
-extern size_t strlcat(char *dest, const char *src, size_t count);
-extern size_t strlcpy(char *dest, const char *src, size_t size);
-#endif
 
 /* some inline functions */
 

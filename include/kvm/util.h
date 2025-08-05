@@ -3,8 +3,6 @@
 #ifndef KVM__UTIL_H
 #define KVM__UTIL_H
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
 /*
  * Some bits are stolen from perf tool :)
  */
